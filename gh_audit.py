@@ -347,6 +347,16 @@ define_rule(
     check_cond=lambda repo: repo.language == "Python",
 )
 
+define_rule(
+    code="W2",
+    name="missing-mypy-lint-workflow",
+    log_message="Missing GitHub Actions workflow for mypy type checking",
+    issue_title="Add Lint workflow for mypy",
+    level="error",
+    check=lambda repo: "mypy" not in _get_workflow(repo, "lint").get("jobs", {}),
+    check_cond=lambda repo: repo.language == "Python",
+)
+
 
 if __name__ == "__main__":
     main()
