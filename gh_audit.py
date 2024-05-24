@@ -15,19 +15,27 @@ logger = logging.getLogger(__name__)
 
 @click.command()
 @click.argument("repository", nargs=-1)
-@click.option("--active", is_flag=True)
-@click.option("--github-token", envvar="GITHUB_TOKEN")
+@click.option(
+    "--active", is_flag=True, help="Include all your non-archived repositories"
+)
+@click.option(
+    "--github-token",
+    envvar="GITHUB_TOKEN",
+    help="GitHub API token",
+    metavar="TOKEN",
+)
 @click.option(
     "--open-issues",
     type=click.Choice(["error", "warning"], case_sensitive=False),
+    help="Open issues for the rule violations",
 )
-@click.option("--verbose", is_flag=True, default=False)
+@click.option("--verbose", is_flag=True, default=False, help="Enable debug logging")
 @click.version_option()
 def main(
     repository: list[str],
     active: bool,
     github_token: str,
-    open_issues: Literal["error", "warning"],
+    open_issues: Literal["error", "warning"] | None,
     verbose: bool,
 ) -> None:
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)

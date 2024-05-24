@@ -15,10 +15,10 @@ $ gh-audit --help
 Usage: gh-audit [OPTIONS] [REPOSITORY]...
 
 Options:
-  --active
-  --github-token TEXT
-  --open-issues [error|warning]
-  --verbose
+  --active                       Include all your non-archived repositories
+  --github-token TOKEN           GitHub API token
+  --open-issues [error|warning]  Open issues for the rule violations
+  --verbose                      Enable debug logging
   --version                      Show the version and exit.
   --help                         Show this message and exit.
 ```
