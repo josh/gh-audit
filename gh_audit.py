@@ -70,9 +70,14 @@ class Rule:
     def __call__(self, repo: Repository) -> bool:
         if self.check_cond(repo) and self.check(repo):
             if self.level == "warning":
-                click.echo(f"\033[33mWARN\033[0m {repo.full_name}: {self.log_message}")
+                click.echo(
+                    f"{repo.full_name}: \033[33mwarn:\033[0m {self.log_message} [{self.name}]"
+                )
             elif self.level == "error":
-                click.echo(f"\033[31mERROR\033[0m {repo.full_name}: {self.log_message}")
+                click.echo(
+                    f"{repo.full_name}: \033[31merror:\033[0m {self.log_message} [{self.name}]"
+                )
+                click.echo(f" {repo.full_name}: {self.log_message}")
             return False
         return True
 
