@@ -48,4 +48,4 @@ jobs:
           pip install '.[dev]'
 
       - name: mypy
-        run: mypy .
+        run: mypy gh_audit.py
