@@ -77,7 +77,6 @@ class Rule:
                 click.echo(
                     f"{repo.full_name}: \033[31merror:\033[0m {self.log_message} [{self.name}]"
                 )
-                click.echo(f" {repo.full_name}: {self.log_message}")
             return False
         return True
 
