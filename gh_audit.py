@@ -51,6 +51,8 @@ def main(
 
         if active:
             for repo in user.get_repos():
+                if repo.owner.login != user.login:
+                    continue
                 if repo.archived:
                     continue
                 for rule in RULES:
