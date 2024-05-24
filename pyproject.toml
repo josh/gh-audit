@@ -7,8 +7,9 @@ license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
     "click",
-    "requests",
     "PyGithub",
+    "pyyaml",
+    "requests",
 ]
 
 [project.entry-points.console_scripts]

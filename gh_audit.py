@@ -6,6 +6,7 @@ from typing import Any, Literal, cast
 
 import click
 import tomllib
+import yaml
 from github import Auth, Github, GithubException
 from github.ContentFile import ContentFile
 from github.Repository import Repository
@@ -44,8 +45,9 @@ def main(
         user = g.get_user()
 
         for name in repository:
+            repo = user.get_repo(name)
             for rule in RULES:
-                rule(repo=user.get_repo(name))
+                rule(repo=repo)
 
         if active:
             for repo in user.get_repos():
@@ -249,6 +251,39 @@ define_rule(
     issue_title="Use project.requires-python >= '3.10'",
     level="warning",
     check=lambda repo: _pyproject_requires_python(repo) == ">=3.11",
+    check_cond=lambda repo: _load_pyproject(repo),
+)
+
+
+@cache
+def _dependabot_config(repo: Repository) -> dict[str, Any]:
+    logger.debug("Loading .github/dependabot.yml for %s", repo.full_name)
+    try:
+        contents = repo.get_contents(path=".github/dependabot.yml")
+    except GithubException:
+        return dict()
+    if isinstance(contents, list):
+        return dict()
+    try:
+        return cast(
+            dict[str, Any],
+            yaml.safe_load(contents.decoded_content.decode("utf-8")),
+        )
+    except yaml.YAMLError:
+        return dict()
+
+
+define_rule(
+    code="D2",
+    name="pip-dependabot",
+    log_message="Dependabot should be enabled for pip ecosystem",
+    issue_title="Enable Dependabot for pip ecosystem",
+    level="error",
+    check=lambda repo: "pip"
+    not in [
+        update.get("package-ecosystem")
+        for update in _dependabot_config(repo).get("updates", [])
+    ],
     check_cond=lambda repo: _load_pyproject(repo),
 )
 
