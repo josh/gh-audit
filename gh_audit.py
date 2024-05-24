@@ -128,6 +128,42 @@ define_rule(
     check=lambda repo: len(repo.topics) == 1,
 )
 
+define_rule(
+    code="S1",
+    name="has-issues",
+    log_message="Repository doesn't have Issues enabled",
+    issue_title="Enable GitHub Issues",
+    level="warning",
+    check=lambda repo: not repo.has_issues,
+)
+
+define_rule(
+    code="S2",
+    name="no-projects",
+    log_message="Repository has Projects enabled",
+    issue_title="Disable GitHub Projects",
+    level="warning",
+    check=lambda repo: repo.has_projects,
+)
+
+define_rule(
+    code="S3",
+    name="no-wiki",
+    log_message="Repository has Wiki enabled",
+    issue_title="Disable GitHub Wiki",
+    level="warning",
+    check=lambda repo: repo.has_wiki,
+)
+
+# define_rule(
+#     code="S4",
+#     name="no-discussions",
+#     log_message="Repository has Discussions enabled",
+#     issue_title="Disable GitHub Discussions",
+#     level="warning",
+#     check=lambda repo: repo.has_discussions,
+# )
+
 
 def _get_readme(repo: Repository) -> ContentFile | None:
     try:
