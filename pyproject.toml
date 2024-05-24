@@ -16,7 +16,7 @@ dependencies = [
 gh-audit = "gh_audit:main"
 
 [project.optional-dependencies]
-dev = ["ruff", "mypy"]
+dev = ["ruff", "mypy", "types-PyYAML"]
 
 [tool.ruff.lint]
 extend-select = ["I", "UP"]
