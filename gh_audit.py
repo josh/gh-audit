@@ -106,6 +106,7 @@ define_rule(
     issue_title="Add a LICENSE",
     level="error",
     check=lambda repo: not repo.license,
+    check_cond=lambda repo: repo.visibility == "public",
 )
 
 define_rule(
@@ -115,6 +116,7 @@ define_rule(
     issue_title="Prefer using MIT License",
     level="warning",
     check=lambda repo: repo.license and repo.license.name != "MIT License",
+    check_cond=lambda repo: repo.visibility == "public",
 )
 
 define_rule(
