@@ -256,39 +256,6 @@ define_rule(
 
 
 @cache
-def _dependabot_config(repo: Repository) -> dict[str, Any]:
-    logger.debug("Loading .github/dependabot.yml for %s", repo.full_name)
-    try:
-        contents = repo.get_contents(path=".github/dependabot.yml")
-    except GithubException:
-        return dict()
-    if isinstance(contents, list):
-        return dict()
-    try:
-        return cast(
-            dict[str, Any],
-            yaml.safe_load(contents.decoded_content.decode("utf-8")),
-        )
-    except yaml.YAMLError:
-        return dict()
-
-
-define_rule(
-    code="D2",
-    name="pip-dependabot",
-    log_message="Dependabot should be enabled for pip ecosystem",
-    issue_title="Enable Dependabot for pip ecosystem",
-    level="error",
-    check=lambda repo: "pip"
-    not in [
-        update.get("package-ecosystem")
-        for update in _dependabot_config(repo).get("updates", [])
-    ],
-    check_cond=lambda repo: _load_pyproject(repo),
-)
-
-
-@cache
 def _ruff_extend_select(repo: Repository) -> list[str]:
     return cast(
         list[str],
@@ -317,6 +284,39 @@ define_rule(
     issue_title="Add 'UP' to tool.ruff.lint.extend-select",
     level="error",
     check=lambda repo: "UP" not in _ruff_extend_select(repo),
+    check_cond=lambda repo: _load_pyproject(repo),
+)
+
+
+@cache
+def _dependabot_config(repo: Repository) -> dict[str, Any]:
+    logger.debug("Loading .github/dependabot.yml for %s", repo.full_name)
+    try:
+        contents = repo.get_contents(path=".github/dependabot.yml")
+    except GithubException:
+        return dict()
+    if isinstance(contents, list):
+        return dict()
+    try:
+        return cast(
+            dict[str, Any],
+            yaml.safe_load(contents.decoded_content.decode("utf-8")),
+        )
+    except yaml.YAMLError:
+        return dict()
+
+
+define_rule(
+    code="D2",
+    name="pip-dependabot",
+    log_message="Dependabot should be enabled for pip ecosystem",
+    issue_title="Enable Dependabot for pip ecosystem",
+    level="error",
+    check=lambda repo: "pip"
+    not in [
+        update.get("package-ecosystem")
+        for update in _dependabot_config(repo).get("updates", [])
+    ],
     check_cond=lambda repo: _load_pyproject(repo),
 )
 
