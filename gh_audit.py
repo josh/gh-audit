@@ -321,5 +321,32 @@ define_rule(
 )
 
 
+def _get_workflow(repo: Repository, name: str) -> dict[str, Any]:
+    try:
+        contents = repo.get_contents(path=f".github/workflows/{name}.yml")
+    except GithubException:
+        return dict()
+    if isinstance(contents, list):
+        return dict()
+    try:
+        return cast(
+            dict[str, Any],
+            yaml.safe_load(contents.decoded_content.decode("utf-8")),
+        )
+    except yaml.YAMLError:
+        return dict()
+
+
+define_rule(
+    code="W1",
+    name="missing-ruff-lint-workflow",
+    log_message="Missing GitHub Actions workflow for ruff linting",
+    issue_title="Add Lint workflow for ruff",
+    level="error",
+    check=lambda repo: "ruff" not in _get_workflow(repo, "lint").get("jobs", {}),
+    check_cond=lambda repo: repo.language == "Python",
+)
+
+
 if __name__ == "__main__":
     main()
