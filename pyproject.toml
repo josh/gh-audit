@@ -1,0 +1,23 @@
+[project]
+name = "gh-audit"
+version = "0.1.0"
+readme = "README.md"
+authors = [{name = "Joshua Peek"}]
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = [
+    "requests",
+    "PyGithub",
+]
+
+[project.entry-points.console_scripts]
+gh-audit = "gh_audit:main"
+
+[project.optional-dependencies]
+dev = ["ruff", "mypy"]
+
+[tool.ruff.lint]
+extend-select = ["I", "UP"]
+
+[tool.mypy]
+strict = true
