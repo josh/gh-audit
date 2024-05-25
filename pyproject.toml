@@ -6,17 +6,20 @@ authors = [{name = "Joshua Peek"}]
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
-    "click",
-    "PyGithub",
-    "pyyaml",
-    "requests",
+    "click>=8.1.1",
+    "pygithub>=2.0.0",
+    "pyyaml>=6.0.1",
 ]
 
 [project.entry-points.console_scripts]
 gh-audit = "gh_audit:main"
 
 [project.optional-dependencies]
-dev = ["ruff", "mypy", "types-PyYAML"]
+dev = [
+    "ruff>=0.4.0",
+    "mypy>=1.0.0",
+    "types-PyYAML>=6.0.1",
+]
 
 [tool.ruff.lint]
 extend-select = ["I", "UP"]

@@ -31,9 +31,7 @@ pynacl==1.5.0
 pyyaml==6.0.1
     # via gh-audit (pyproject.toml)
 requests==2.32.2
-    # via
-    #   gh-audit (pyproject.toml)
-    #   pygithub
+    # via pygithub
 ruff==0.4.5
     # via gh-audit (pyproject.toml)
 types-pyyaml==6.0.12.20240311
