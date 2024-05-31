@@ -325,8 +325,16 @@ define_rule(
         update.get("package-ecosystem")
         for update in _dependabot_config(repo).get("updates", [])
     ],
-    check_cond=lambda repo: _load_pyproject(repo),
+    check_cond=lambda repo: _has_requirements_txt(repo),
 )
+
+
+def _has_requirements_txt(repo: Repository) -> bool:
+    try:
+        repo.get_contents(path="requirements.txt")
+        return True
+    except GithubException:
+        return False
 
 
 def _get_workflow(repo: Repository, name: str) -> dict[str, Any]:
