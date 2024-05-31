@@ -190,14 +190,21 @@ def _get_readme(repo: Repository) -> ContentFile | None:
         return None
 
 
+def _get_contents(repo: Repository, path: str) -> ContentFile | None:
+    try:
+        contents = repo.get_contents(path=path)
+    except GithubException:
+        return None
+    if isinstance(contents, list):
+        return None
+    return contents
+
+
 @cache
 def _load_pyproject(repo: Repository) -> dict[str, Any]:
     logger.debug("Loading pyproject.toml for %s", repo.full_name)
-    try:
-        contents = repo.get_contents(path="pyproject.toml")
-    except GithubException:
-        return dict()
-    if isinstance(contents, list):
+    contents = _get_contents(repo, path="pyproject.toml")
+    if not contents:
         return dict()
     try:
         return tomllib.loads(contents.decoded_content.decode("utf-8"))
@@ -230,6 +237,12 @@ def _pyproject_requires_python(repo: Repository) -> str:
     return cast(
         str, _load_pyproject(repo).get("project", {}).get("requires-python", "")
     )
+
+
+def _has_requirements_txt(repo: Repository) -> bool:
+    if _get_contents(repo, path="requirements.txt"):
+        return True
+    return False
 
 
 define_rule(
@@ -295,15 +308,37 @@ define_rule(
     check_cond=lambda repo: _load_pyproject(repo),
 )
 
+define_rule(
+    code="P1.4",
+    name="requirements-txt-exact",
+    log_message="Use exact versions in requirements.txt",
+    issue_title="Use exact versions in requirements.txt",
+    level="error",
+    check=lambda repo: _requirements_txt_is_exact(repo) is False,
+    check_cond=lambda repo: _has_requirements_txt(repo),
+)
+
+
+def _requirements_txt_is_exact(repo: Repository) -> bool:
+    if contents := _get_contents(repo, path="requirements.txt"):
+        text = contents.decoded_content.decode("utf-8")
+        for line in text.splitlines():
+            if line.startswith("#"):
+                continue
+            if "@" in line:
+                continue
+            if "==" not in line:
+                return False
+        return True
+    else:
+        return True
+
 
 @cache
 def _dependabot_config(repo: Repository) -> dict[str, Any]:
     logger.debug("Loading .github/dependabot.yml for %s", repo.full_name)
-    try:
-        contents = repo.get_contents(path=".github/dependabot.yml")
-    except GithubException:
-        return dict()
-    if isinstance(contents, list):
+    contents = _get_contents(repo, path=".github/dependabot.yml")
+    if not contents:
         return dict()
     try:
         return cast(
@@ -329,20 +364,9 @@ define_rule(
 )
 
 
-def _has_requirements_txt(repo: Repository) -> bool:
-    try:
-        repo.get_contents(path="requirements.txt")
-        return True
-    except GithubException:
-        return False
-
-
 def _get_workflow(repo: Repository, name: str) -> dict[str, Any]:
-    try:
-        contents = repo.get_contents(path=f".github/workflows/{name}.yml")
-    except GithubException:
-        return dict()
-    if isinstance(contents, list):
+    contents = _get_contents(repo, path=f".github/workflows/{name}.yml")
+    if not contents:
         return dict()
     try:
         return cast(
