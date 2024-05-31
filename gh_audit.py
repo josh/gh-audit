@@ -353,13 +353,20 @@ def _get_workflow(repo: Repository, name: str) -> dict[str, Any]:
         return dict()
 
 
+def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
+    for workflow in workflows:
+        if name in _get_workflow(repo, workflow).get("jobs", {}):
+            return True
+    return False
+
+
 define_rule(
     code="W1",
     name="missing-ruff-lint-workflow",
     log_message="Missing GitHub Actions workflow for ruff linting",
     issue_title="Add Lint workflow for ruff",
     level="error",
-    check=lambda repo: "ruff" not in _get_workflow(repo, "lint").get("jobs", {}),
+    check=lambda repo: _job_defined(repo, ["lint", "test"], "ruff") is False,
     check_cond=lambda repo: repo.language == "Python",
 )
 
@@ -369,7 +376,7 @@ define_rule(
     log_message="Missing GitHub Actions workflow for mypy type checking",
     issue_title="Add Lint workflow for mypy",
     level="error",
-    check=lambda repo: "mypy" not in _get_workflow(repo, "lint").get("jobs", {}),
+    check=lambda repo: _job_defined(repo, ["lint", "test"], "mypy") is False,
     check_cond=lambda repo: repo.language == "Python",
 )
 
