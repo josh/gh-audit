@@ -323,7 +323,7 @@ def _requirements_txt_is_exact(repo: Repository) -> bool:
     if contents := _get_contents(repo, path="requirements.txt"):
         text = contents.decoded_content.decode("utf-8")
         for line in text.splitlines():
-            if line.startswith("#"):
+            if line.lstrip().startswith("#"):
                 continue
             if "@" in line:
                 continue
