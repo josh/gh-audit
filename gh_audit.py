@@ -308,8 +308,36 @@ define_rule(
     check_cond=lambda repo: _load_pyproject(repo),
 )
 
+
+def _mypy_strict(repo: Repository) -> bool | None:
+    return cast(
+        bool | None,
+        _load_pyproject(repo).get("tool", {}).get("mypy", {}).get("strict"),
+    )
+
+
 define_rule(
-    code="P1.4",
+    code="P1.4.1",
+    name="mypy-strict-declared",
+    log_message="mypy strict mode is not declared",
+    issue_title="Declare a mypy strict mode",
+    level="error",
+    check=lambda repo: _mypy_strict(repo) is None,
+    check_cond=lambda repo: _load_pyproject(repo),
+)
+
+define_rule(
+    code="P1.4.2",
+    name="mypy-strict",
+    log_message="mypy strict mode is not enabled",
+    issue_title="Enable mypy strict mode",
+    level="warning",
+    check=lambda repo: _mypy_strict(repo) is False,
+    check_cond=lambda repo: _load_pyproject(repo),
+)
+
+define_rule(
+    code="P1.5",
     name="requirements-txt-exact",
     log_message="Use exact versions in requirements.txt",
     issue_title="Use exact versions in requirements.txt",
