@@ -61,7 +61,6 @@ def main(
 
 @dataclass
 class Rule:
-    code: str
     name: str
     log_message: str
     issue_title: str
@@ -91,7 +90,6 @@ def define_rule(**kwargs: Any) -> None:
 
 
 define_rule(
-    code="M1",
     name="missing-description",
     log_message="Missing repository description",
     issue_title="Set repository description",
@@ -100,7 +98,6 @@ define_rule(
 )
 
 define_rule(
-    code="M2",
     name="missing-license",
     log_message="Missing license file",
     issue_title="Add a LICENSE",
@@ -110,7 +107,6 @@ define_rule(
 )
 
 define_rule(
-    code="M2.1",
     name="non-mit-license",
     log_message="Using non-MIT license",
     issue_title="Prefer using MIT License",
@@ -120,7 +116,6 @@ define_rule(
 )
 
 define_rule(
-    code="M3",
     name="missing-readme",
     log_message="Missing README file",
     issue_title="Add a README",
@@ -129,7 +124,6 @@ define_rule(
 )
 
 define_rule(
-    code="M4",
     name="missing-topics",
     log_message="Missing topics",
     issue_title="Add topics",
@@ -138,7 +132,6 @@ define_rule(
 )
 
 define_rule(
-    code="M4.1",
     name="too-few-topics",
     log_message="Only one topic",
     issue_title="Add more topics",
@@ -147,7 +140,6 @@ define_rule(
 )
 
 define_rule(
-    code="S1",
     name="has-issues",
     log_message="Repository doesn't have Issues enabled",
     issue_title="Enable GitHub Issues",
@@ -156,7 +148,6 @@ define_rule(
 )
 
 define_rule(
-    code="S2",
     name="no-projects",
     log_message="Repository has Projects enabled",
     issue_title="Disable GitHub Projects",
@@ -165,7 +156,6 @@ define_rule(
 )
 
 define_rule(
-    code="S3",
     name="no-wiki",
     log_message="Repository has Wiki enabled",
     issue_title="Disable GitHub Wiki",
@@ -174,7 +164,6 @@ define_rule(
 )
 
 # define_rule(
-#     code="S4",
 #     name="no-discussions",
 #     log_message="Repository has Discussions enabled",
 #     issue_title="Disable GitHub Discussions",
@@ -213,7 +202,6 @@ def _load_pyproject(repo: Repository) -> dict[str, Any]:
 
 
 define_rule(
-    code="P1",
     name="missing-pyproject",
     log_message="Missing pyproject.toml",
     issue_title="Add a pyproject.toml",
@@ -223,7 +211,6 @@ define_rule(
 )
 
 define_rule(
-    code="P1.1",
     name="missing-pyproject-project-name",
     log_message="project.name missing in pyproject.toml",
     issue_title="Add project.name to pyproject.toml",
@@ -246,7 +233,6 @@ def _has_requirements_txt(repo: Repository) -> bool:
 
 
 define_rule(
-    code="P1.2",
     name="missing-pyproject-requires-python",
     log_message="project.requires-python missing in pyproject.toml",
     issue_title="Add project.requires-python to pyproject.toml",
@@ -256,7 +242,6 @@ define_rule(
 )
 
 define_rule(
-    code="P1.2.1",
     name="missing-pyproject-requires-python-3-12",
     log_message="project.requires-python should be 3.10 or older",
     issue_title="Use project.requires-python >= '3.10'",
@@ -266,7 +251,6 @@ define_rule(
 )
 
 define_rule(
-    code="P1.2.2",
     name="missing-pyproject-requires-python-3-11",
     log_message="project.requires-python should be 3.10 or older",
     issue_title="Use project.requires-python >= '3.10'",
@@ -289,7 +273,6 @@ def _ruff_extend_select(repo: Repository) -> list[str]:
 
 
 define_rule(
-    code="P1.3.1",
     name="missing-pyproject-ruff-isort-rules",
     log_message="tool.ruff.lint.extend-select missing 'I' to enable isort rules",
     issue_title="Add 'I' to tool.ruff.lint.extend-select",
@@ -299,7 +282,6 @@ define_rule(
 )
 
 define_rule(
-    code="P1.3.2",
     name="missing-pyproject-ruff-pyupgrade-rules",
     log_message="tool.ruff.lint.extend-select missing 'UP' to enable pyupgrade rules",
     issue_title="Add 'UP' to tool.ruff.lint.extend-select",
@@ -317,7 +299,6 @@ def _mypy_strict(repo: Repository) -> bool | None:
 
 
 define_rule(
-    code="P1.4.1",
     name="mypy-strict-declared",
     log_message="mypy strict mode is not declared",
     issue_title="Declare a mypy strict mode",
@@ -327,7 +308,6 @@ define_rule(
 )
 
 define_rule(
-    code="P1.4.2",
     name="mypy-strict",
     log_message="mypy strict mode is not enabled",
     issue_title="Enable mypy strict mode",
@@ -337,7 +317,6 @@ define_rule(
 )
 
 define_rule(
-    code="P1.5",
     name="requirements-txt-exact",
     log_message="Use exact versions in requirements.txt",
     issue_title="Use exact versions in requirements.txt",
@@ -378,7 +357,6 @@ def _dependabot_config(repo: Repository) -> dict[str, Any]:
 
 
 define_rule(
-    code="D2",
     name="pip-dependabot",
     log_message="Dependabot should be enabled for pip ecosystem",
     issue_title="Enable Dependabot for pip ecosystem",
@@ -413,7 +391,6 @@ def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
 
 
 define_rule(
-    code="W1",
     name="missing-ruff-lint-workflow",
     log_message="Missing GitHub Actions workflow for ruff linting",
     issue_title="Add Lint workflow for ruff",
@@ -423,7 +400,6 @@ define_rule(
 )
 
 define_rule(
-    code="W2",
     name="missing-mypy-lint-workflow",
     log_message="Missing GitHub Actions workflow for mypy type checking",
     issue_title="Add Lint workflow for mypy",
