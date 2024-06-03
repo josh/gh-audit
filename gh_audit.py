@@ -356,6 +356,22 @@ def _dependabot_config(repo: Repository) -> dict[str, Any]:
         return dict()
 
 
+def _dependabot_update_schedule_intervals(repo: Repository) -> set[str]:
+    return {
+        update.get("schedule", {}).get("interval")
+        for update in _dependabot_config(repo).get("updates", [])
+    }
+
+
+define_rule(
+    name="dependabot-schedule-monthly",
+    log_message="Dependabot should be scheduled monthly",
+    issue_title="Schedule Dependabot monthly",
+    level="warning",
+    check=lambda repo: _dependabot_update_schedule_intervals(repo) != {"monthly"},
+    check_cond=lambda repo: _dependabot_config(repo),
+)
+
 define_rule(
     name="pip-dependabot",
     log_message="Dependabot should be enabled for pip ecosystem",
