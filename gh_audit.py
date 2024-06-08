@@ -235,6 +235,23 @@ define_rule(
     check_cond=lambda repo: repo.license and repo.license.name == "MIT License",
 )
 
+
+def _pyproject_author_names(repo: Repository) -> set[str]:
+    names: set[str] = set()
+    for author in _load_pyproject(repo).get("project", {}).get("authors", []):
+        if name := author.get("name"):
+            names.add(name)
+    return names
+
+
+def _pyproject_author_emails(repo: Repository) -> set[str]:
+    emails: set[str] = set()
+    for author in _load_pyproject(repo).get("project", {}).get("authors", []):
+        if email := author.get("email"):
+            emails.add(email)
+    return emails
+
+
 define_rule(
     name="pyproject-omit-license",
     log_message="License classifier should be omitted when using MIT License",
@@ -242,6 +259,24 @@ define_rule(
     level="warning",
     check=lambda repo: "license" in _load_pyproject(repo).get("project", {}),
     check_cond=lambda repo: repo.license and repo.license.name == "MIT License",
+)
+
+define_rule(
+    name="pyproject-author-name",
+    log_message="project.authors[0].name missing in pyproject.toml",
+    issue_title="Add a project.authors name to pyproject.toml",
+    level="warn",
+    check=lambda repo: len(_pyproject_author_names(repo)) == 0,
+    check_cond=lambda repo: _load_pyproject(repo),
+)
+
+define_rule(
+    name="pyproject-omit-author-email",
+    log_message="project.authors[0].email should be omitted for privacy",
+    issue_title="Remove project.authors email in pyproject.toml",
+    level="warning",
+    check=lambda repo: len(_pyproject_author_emails(repo)) > 0,
+    check_cond=lambda repo: _load_pyproject(repo),
 )
 
 
