@@ -3,12 +3,14 @@ name = "gh-audit"
 version = "0.1.0"
 readme = "README.md"
 authors = [{name = "Joshua Peek"}]
-license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
     "click>=8.1.1",
     "pygithub>=2.0.0",
     "pyyaml>=6.0.1",
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
 ]
 
 [project.entry-points.console_scripts]
