@@ -232,7 +232,9 @@ define_rule(
     issue_title="Add License classifier to pyproject.toml",
     level="error",
     check=lambda repo: _MIT_LICENSE_CLASSIFIER not in _pyproject_classifiers(repo),
-    check_cond=lambda repo: repo.license and repo.license.name == "MIT License",
+    check_cond=lambda repo: _load_pyproject(repo)
+    and repo.license
+    and repo.license.name == "MIT License",
 )
 
 
