@@ -36,7 +36,7 @@ ruff==0.4.7
     # via gh-audit (pyproject.toml)
 types-pyyaml==6.0.12.20240311
     # via gh-audit (pyproject.toml)
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via
     #   mypy
     #   pygithub
