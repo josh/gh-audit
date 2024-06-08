@@ -279,6 +279,15 @@ define_rule(
     check_cond=lambda repo: _load_pyproject(repo),
 )
 
+define_rule(
+    name="pyproject-readme",
+    log_message="project.readme missing in pyproject.toml",
+    issue_title="Add project.readme to pyproject.toml",
+    level="error",
+    check=lambda repo: _load_pyproject(repo).get("project", {}).get("readme") is None,
+    check_cond=lambda repo: _load_pyproject(repo),
+)
+
 
 def _pyproject_requires_python(repo: Repository) -> str:
     return cast(
