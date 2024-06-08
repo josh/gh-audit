@@ -220,6 +220,31 @@ define_rule(
 )
 
 
+def _pyproject_classifiers(repo: Repository) -> set[str]:
+    return set(_load_pyproject(repo).get("project", {}).get("classifiers", []))
+
+
+_MIT_LICENSE_CLASSIFIER = "License :: OSI Approved :: MIT License"
+
+define_rule(
+    name="pyproject-mit-license-classifier",
+    log_message="License classifier missing in pyproject.toml",
+    issue_title="Add License classifier to pyproject.toml",
+    level="error",
+    check=lambda repo: _MIT_LICENSE_CLASSIFIER not in _pyproject_classifiers(repo),
+    check_cond=lambda repo: repo.license and repo.license.name == "MIT License",
+)
+
+define_rule(
+    name="pyproject-omit-license",
+    log_message="License classifier should be omitted when using MIT License",
+    issue_title="Omit License classifier in pyproject.toml",
+    level="warning",
+    check=lambda repo: "license" in _load_pyproject(repo).get("project", {}),
+    check_cond=lambda repo: repo.license and repo.license.name == "MIT License",
+)
+
+
 def _pyproject_requires_python(repo: Repository) -> str:
     return cast(
         str, _load_pyproject(repo).get("project", {}).get("requires-python", "")
