@@ -753,6 +753,32 @@ def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
 
 
 @define_rule(
+    name="disable-setup-python-cache",
+    log_message="setup-python cache should be disabled when using uv",
+    issue_title="Disable setup-python cache",
+    level="error",
+)
+def _disable_setup_python_cache(repo: Repository) -> RESULT:
+    for name, job in _iter_workflow_jobs(repo):
+        if not _job_uses_uv(job):
+            continue
+
+        for step in job.get("steps", []):
+            if step.get("uses", "").startswith("actions/setup-python"):
+                if step.get("with", {}).get("cache", None) is not None:
+                    return FAIL
+
+    return OK
+
+
+def _job_uses_uv(job: dict[str, Any]) -> bool:
+    for step in job.get("steps", []):
+        if re.search("uv ", step.get("run", "")):
+            return True
+    return False
+
+
+@define_rule(
     name="missing-ruff",
     log_message="Missing GitHub Actions workflow for ruff linting",
     issue_title="Add Lint workflow for ruff",
