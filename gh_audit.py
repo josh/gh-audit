@@ -171,6 +171,24 @@ define_rule(
 #     check=lambda repo: repo.has_discussions,
 # )
 
+# Check if repo is larger than 1GB
+define_rule(
+    name="git-size",
+    log_message="Repository size is too large",
+    issue_title="Reduce repository size",
+    level="error",
+    check=lambda repo: repo.size > (1024 * 1024),
+)
+
+# Check if repo is larger than 50MB
+define_rule(
+    name="git-size",
+    log_message="Repository size is too large",
+    issue_title="Reduce repository size",
+    level="warning",
+    check=lambda repo: repo.size > (50 * 1024),
+)
+
 
 def _get_readme(repo: Repository) -> ContentFile | None:
     try:
