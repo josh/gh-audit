@@ -120,8 +120,11 @@ def _missing_description(repo: Repository) -> RESULT:
     check_cond=lambda repo: repo.visibility == "public",
 )
 def _missing_license(repo: Repository) -> RESULT:
-    if repo.get_license():
-        return OK
+    try:
+        if repo.get_license():
+            return OK
+    except GithubException:
+        pass
     return FAIL
 
 
