@@ -1,4 +1,5 @@
 import logging
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
@@ -506,31 +507,58 @@ def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
     return False
 
 
+def _job_runs(repo: Repository, workflows: list[str], pattern: str) -> bool:
+    for workflow in workflows:
+        for name, job in _get_workflow(repo, workflow).get("jobs", {}).items():
+            for step in job.get("steps", []):
+                if re.search(pattern, step.get("run", "")):
+                    return True
+    return False
+
+
 define_rule(
-    name="missing-ruff-lint-workflow",
+    name="missing-ruff",
     log_message="Missing GitHub Actions workflow for ruff linting",
     issue_title="Add Lint workflow for ruff",
     level="error",
-    check=lambda repo: _job_defined(repo, ["lint", "test"], "ruff") is False,
+    check=lambda repo: _job_runs(repo, ["lint", "test"], "ruff ") is False,
     check_cond=lambda repo: repo.language == "Python",
 )
 
 define_rule(
-    name="missing-ruff-lint-workflow",
+    name="missing-ruff",
     log_message="Missing GitHub Actions workflow for ruff linting",
     issue_title="Add Lint workflow for ruff",
     level="warning",
-    check=lambda repo: _job_defined(repo, ["lint", "test"], "ruff") is False,
+    check=lambda repo: _job_runs(repo, ["lint", "test"], "ruff ") is False,
     check_cond=lambda repo: ".py" in _file_extnames(repo),
 )
 
 define_rule(
-    name="missing-mypy-lint-workflow",
+    name="missing-mypy",
     log_message="Missing GitHub Actions workflow for mypy type checking",
     issue_title="Add Lint workflow for mypy",
     level="error",
-    check=lambda repo: _job_defined(repo, ["lint", "test"], "mypy") is False,
+    check=lambda repo: _job_runs(repo, ["lint", "test"], "mypy ") is False,
     check_cond=lambda repo: repo.language == "Python",
+)
+
+define_rule(
+    name="missing-shfmt",
+    log_message="Missing GitHub Actions workflow for shfmt linting",
+    issue_title="Add Lint workflow for shfmt",
+    level="warning",
+    check=lambda repo: _job_runs(repo, ["lint", "test"], "shfmt ") is False,
+    check_cond=lambda repo: ".sh" in _file_extnames(repo),
+)
+
+define_rule(
+    name="missing-shellcheck",
+    log_message="Missing GitHub Actions workflow for shellcheck linting",
+    issue_title="Add Lint workflow for shellcheck",
+    level="warning",
+    check=lambda repo: _job_runs(repo, ["lint", "test"], "shellcheck ") is False,
+    check_cond=lambda repo: ".sh" in _file_extnames(repo),
 )
 
 
