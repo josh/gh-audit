@@ -17,7 +17,6 @@ Usage: gh-audit [OPTIONS] [REPOSITORY]...
 Options:
   --active                       Include all your non-archived repositories
   --github-token TOKEN           GitHub API token
-  --open-issues [error|warning]  Open issues for the rule violations
   --verbose                      Enable debug logging
   --version                      Show the version and exit.
   --help                         Show this message and exit.

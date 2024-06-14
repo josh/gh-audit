@@ -27,18 +27,12 @@ logger = logging.getLogger(__name__)
     help="GitHub API token",
     metavar="TOKEN",
 )
-@click.option(
-    "--open-issues",
-    type=click.Choice(["error", "warning"], case_sensitive=False),
-    help="Open issues for the rule violations",
-)
 @click.option("--verbose", is_flag=True, default=False, help="Enable debug logging")
 @click.version_option()
 def main(
     repository: list[str],
     active: bool,
     github_token: str,
-    open_issues: Literal["error", "warning"] | None,
     verbose: bool,
 ) -> None:
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
