@@ -362,6 +362,34 @@ define_rule(
 
 
 @cache
+def _pyproject_all_dependencies(repo: Repository) -> set[str]:
+    deps: set[str] = set()
+    project = _load_pyproject(repo).get("project", {})
+    for dep in project.get("dependencies", []):
+        deps.add(dep)
+    for extra_deps in project.get("optional-dependencies", {}).values():
+        for dep in extra_deps:
+            deps.add(dep)
+    return deps
+
+
+def _pydep_has_lower_bound(dep: str) -> bool:
+    return "==" in dep or ">" in dep or "~=" in dep or "@" in dep
+
+
+define_rule(
+    name="pyproject-dependency-lower-bound",
+    log_message="Dependencies should have lower bound",
+    issue_title="Add lower bound to pyproject.toml dependencies",
+    level="error",
+    check=lambda repo: any(
+        not _pydep_has_lower_bound(dep) for dep in _pyproject_all_dependencies(repo)
+    ),
+    check_cond=lambda repo: _load_pyproject(repo),
+)
+
+
+@cache
 def _ruff_extend_select(repo: Repository) -> list[str]:
     return cast(
         list[str],
