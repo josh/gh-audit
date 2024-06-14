@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
-from typing import Any, Literal, cast, Union, Final
+from typing import Any, Final, Literal, cast
 
 import click
 import tomllib
