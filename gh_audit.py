@@ -210,6 +210,14 @@ def _get_contents(repo: Repository, path: str) -> ContentFile | None:
 
 
 @cache
+def _get_contents_text(repo: Repository, path: str) -> str:
+    if contents := _get_contents(repo, path=path):
+        return contents.decoded_content.decode("utf-8")
+    else:
+        return ""
+
+
+@cache
 def _ls_tree(repo: Repository) -> list[Path]:
     return [Path(item.path) for item in repo.get_git_tree("HEAD", recursive=True).tree]
 
@@ -325,12 +333,6 @@ def _pyproject_requires_python(repo: Repository) -> str:
     return cast(
         str, _load_pyproject(repo).get("project", {}).get("requires-python", "")
     )
-
-
-def _has_requirements_txt(repo: Repository) -> bool:
-    if _get_contents(repo, path="requirements.txt"):
-        return True
-    return False
 
 
 define_rule(
@@ -454,10 +456,28 @@ define_rule(
     check_cond=lambda repo: _has_requirements_txt(repo),
 )
 
+define_rule(
+    name="requirements-txt-uv-compiled",
+    log_message="requirements.txt is not compiled by uv",
+    issue_title="Compile requirements.txt with uv",
+    level="warning",
+    check=lambda repo: "uv pip compile" not in _requirements_txt(repo),
+    check_cond=lambda repo: _has_requirements_txt(repo),
+)
+
+
+def _has_requirements_txt(repo: Repository) -> bool:
+    if _get_contents(repo, path="requirements.txt"):
+        return True
+    return False
+
+
+def _requirements_txt(repo: Repository) -> str:
+    return _get_contents_text(repo, path="requirements.txt")
+
 
 def _requirements_txt_is_exact(repo: Repository) -> bool:
-    if contents := _get_contents(repo, path="requirements.txt"):
-        text = contents.decoded_content.decode("utf-8")
+    if text := _requirements_txt(repo):
         for line in text.splitlines():
             if line.lstrip().startswith("#"):
                 continue
