@@ -15,9 +15,12 @@ jobs:
           python-version: "3.12"
           cache: "pip"
 
-      - name: Install dependencies
+      - name: Install uv
+        run: pipx install uv
+
+      - name: Install ruff
         run: |
-          pip install --constraint requirements.txt ruff
+          uv pip install --system --constraint requirements.txt ruff
 
       - name: Ruff Formatter
         run: ruff format --diff .
@@ -41,9 +44,12 @@ jobs:
           python-version: "3.12"
           cache: "pip"
 
+      - name: Install uv
+        run: pipx install uv
+
       - name: Install dependencies
         run: |
-          pip install --requirement requirements.txt
+          uv pip install --system --requirement requirements.txt
 
       - name: mypy
         run: mypy .
