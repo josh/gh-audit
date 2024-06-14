@@ -56,6 +56,7 @@ def main(
 
 
 OK: Final = "OK"
+SKIP: Final = "OK"
 FAIL: Final = "FAIL"
 RESULT = Literal["OK", "FAIL"]
 
@@ -67,10 +68,9 @@ class Rule:
     issue_title: str
     level: Literal["error", "warning"]
     check: Callable[[Repository], RESULT]
-    check_cond: Callable[[Repository], bool] = lambda _: True
 
     def __call__(self, repo: Repository) -> bool:
-        if self.check_cond(repo) and self.check(repo) is FAIL:
+        if self.check(repo) is FAIL:
             if self.level == "warning":
                 click.echo(
                     f"{repo.full_name}: \033[33mwarn:\033[0m {self.log_message} [{self.name}]"
@@ -111,9 +111,11 @@ def _missing_description(repo: Repository) -> RESULT:
     log_message="Missing license file",
     issue_title="Add a LICENSE",
     level="error",
-    check_cond=lambda repo: repo.visibility == "public",
 )
 def _missing_license(repo: Repository) -> RESULT:
+    if repo.visibility == "private":
+        return SKIP
+
     try:
         if repo.get_license():
             return OK
@@ -127,9 +129,10 @@ def _missing_license(repo: Repository) -> RESULT:
     log_message="Using non-MIT license",
     issue_title="Prefer using MIT License",
     level="warning",
-    check_cond=lambda repo: repo.visibility == "public",
 )
 def _non_mit_license(repo: Repository) -> RESULT:
+    if repo.visibility == "private":
+        return SKIP
     if repo.license and repo.license.name != "MIT License":
         return FAIL
     return OK
@@ -285,9 +288,10 @@ def _load_pyproject(repo: Repository) -> dict[str, Any]:
     log_message="Missing pyproject.toml",
     issue_title="Add a pyproject.toml",
     level="error",
-    check_cond=lambda repo: repo.language == "Python",
 )
 def _missing_pyproject(repo: Repository) -> RESULT:
+    if repo.language != "Python":
+        return SKIP
     if _load_pyproject(repo):
         return OK
     return FAIL
@@ -298,10 +302,13 @@ def _missing_pyproject(repo: Repository) -> RESULT:
     log_message="project.name missing in pyproject.toml",
     issue_title="Add project.name to pyproject.toml",
     level="error",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _missing_pyproject_project_name(repo: Repository) -> RESULT:
-    if _load_pyproject(repo).get("project", {}).get("name") is None:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
+    if pyproject.get("project", {}).get("name") is None:
         return FAIL
     return OK
 
@@ -318,11 +325,16 @@ _MIT_LICENSE_CLASSIFIER = "License :: OSI Approved :: MIT License"
     log_message="License classifier missing in pyproject.toml",
     issue_title="Add License classifier to pyproject.toml",
     level="error",
-    check_cond=lambda repo: _load_pyproject(repo)
-    and repo.license
-    and repo.license.name == "MIT License",
 )
 def _pyproject_mit_license_classifier(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+    if not repo.license:
+        return SKIP
+    if repo.license.name != "MIT License":
+        return SKIP
+
     if _MIT_LICENSE_CLASSIFIER in _pyproject_classifiers(repo):
         return OK
     return FAIL
@@ -349,9 +361,16 @@ def _pyproject_author_emails(repo: Repository) -> set[str]:
     log_message="License classifier should be omitted when using MIT License",
     issue_title="Omit License classifier in pyproject.toml",
     level="warning",
-    check_cond=lambda repo: repo.license and repo.license.name == "MIT License",
 )
 def _pyproject_omit_license(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+    if not repo.license:
+        return SKIP
+    if repo.license.name != "MIT License":
+        return SKIP
+
     if "license" in _load_pyproject(repo).get("project", {}):
         return FAIL
     return OK
@@ -362,9 +381,12 @@ def _pyproject_omit_license(repo: Repository) -> RESULT:
     log_message="project.authors[0].name missing in pyproject.toml",
     issue_title="Add a project.authors name to pyproject.toml",
     level="warn",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _pyproject_author_name(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
     if len(_pyproject_author_names(repo)) == 0:
         return FAIL
     return OK
@@ -375,9 +397,12 @@ def _pyproject_author_name(repo: Repository) -> RESULT:
     log_message="project.authors[0].email should be omitted for privacy",
     issue_title="Remove project.authors email in pyproject.toml",
     level="warning",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _pyproject_omit_author_email(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
     if len(_pyproject_author_emails(repo)) > 0:
         return FAIL
     return OK
@@ -388,10 +413,13 @@ def _pyproject_omit_author_email(repo: Repository) -> RESULT:
     log_message="project.readme missing in pyproject.toml",
     issue_title="Add project.readme to pyproject.toml",
     level="error",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _pyproject_readme(repo: Repository) -> RESULT:
-    if _load_pyproject(repo).get("project", {}).get("readme") is None:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
+    if pyproject.get("project", {}).get("readme") is None:
         return FAIL
     return OK
 
@@ -407,9 +435,12 @@ def _pyproject_requires_python(repo: Repository) -> str:
     log_message="project.requires-python missing in pyproject.toml",
     issue_title="Add project.requires-python to pyproject.toml",
     level="error",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _missing_pyproject_requires_python(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
     if _pyproject_requires_python(repo):
         return OK
     return FAIL
@@ -420,9 +451,12 @@ def _missing_pyproject_requires_python(repo: Repository) -> RESULT:
     log_message="project.requires-python should be 3.10 or older",
     issue_title="Use project.requires-python >= '3.10'",
     level="warning",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _missing_pyproject_requires_python_3_12(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
     if _pyproject_requires_python(repo) == ">=3.12":
         return FAIL
     return OK
@@ -433,9 +467,12 @@ def _missing_pyproject_requires_python_3_12(repo: Repository) -> RESULT:
     log_message="project.requires-python should be 3.10 or older",
     issue_title="Use project.requires-python >= '3.10'",
     level="warning",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _missing_pyproject_requires_python_3_11(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
     if _pyproject_requires_python(repo) == ">=3.11":
         return FAIL
     return OK
@@ -462,9 +499,12 @@ def _pydep_has_lower_bound(dep: str) -> bool:
     log_message="Dependencies should have lower bound",
     issue_title="Add lower bound to pyproject.toml dependencies",
     level="error",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _pyproject_dependency_lower_bound(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
     for dep in _pyproject_all_dependencies(repo):
         if not _pydep_has_lower_bound(dep):
             return FAIL
@@ -488,9 +528,12 @@ def _ruff_extend_select(repo: Repository) -> list[str]:
     log_message="tool.ruff.lint.extend-select missing 'I' to enable isort rules",
     issue_title="Add 'I' to tool.ruff.lint.extend-select",
     level="error",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _missing_pyproject_ruff_isort_rules(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
     if "I" in _ruff_extend_select(repo):
         return OK
     return FAIL
@@ -501,9 +544,12 @@ def _missing_pyproject_ruff_isort_rules(repo: Repository) -> RESULT:
     log_message="tool.ruff.lint.extend-select missing 'UP' to enable pyupgrade rules",
     issue_title="Add 'UP' to tool.ruff.lint.extend-select",
     level="error",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _missing_pyproject_ruff_pyupgrade_rules(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
     if "UP" in _ruff_extend_select(repo):
         return OK
     return FAIL
@@ -521,9 +567,12 @@ def _mypy_strict(repo: Repository) -> bool | None:
     log_message="mypy strict mode is not declared",
     issue_title="Declare a mypy strict mode",
     level="error",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _mypy_strict_declared(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
     if _mypy_strict(repo) is None:
         return FAIL
     return OK
@@ -534,9 +583,12 @@ def _mypy_strict_declared(repo: Repository) -> RESULT:
     log_message="mypy strict mode is not enabled",
     issue_title="Enable mypy strict mode",
     level="warning",
-    check_cond=lambda repo: _load_pyproject(repo),
 )
 def _mypy_strict_enabled(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
     if _mypy_strict(repo) is False:
         return FAIL
     return OK
@@ -547,9 +599,10 @@ def _mypy_strict_enabled(repo: Repository) -> RESULT:
     log_message="Use exact versions in requirements.txt",
     issue_title="Use exact versions in requirements.txt",
     level="error",
-    check_cond=lambda repo: _has_requirements_txt(repo),
 )
 def _requirements_txt_exact(repo: Repository) -> RESULT:
+    if not _has_requirements_txt(repo):
+        return SKIP
     if _requirements_txt_is_exact(repo) is False:
         return FAIL
     return OK
@@ -560,9 +613,10 @@ def _requirements_txt_exact(repo: Repository) -> RESULT:
     log_message="requirements.txt is not compiled by uv",
     issue_title="Compile requirements.txt with uv",
     level="warning",
-    check_cond=lambda repo: _has_requirements_txt(repo),
 )
 def _requirements_txt_uv_compiled(repo: Repository) -> RESULT:
+    if not _has_requirements_txt(repo):
+        return SKIP
     if "uv pip compile" in _requirements_txt(repo):
         return OK
     return FAIL
@@ -619,9 +673,10 @@ def _dependabot_update_schedule_intervals(repo: Repository) -> set[str]:
     log_message="Dependabot should be scheduled monthly",
     issue_title="Schedule Dependabot monthly",
     level="warning",
-    check_cond=lambda repo: _dependabot_config(repo),
 )
 def _dependabot_schedule_monthly(repo: Repository) -> RESULT:
+    if not _dependabot_config(repo):
+        return SKIP
     if _dependabot_update_schedule_intervals(repo) != {"monthly"}:
         return FAIL
     return OK
@@ -632,9 +687,10 @@ def _dependabot_schedule_monthly(repo: Repository) -> RESULT:
     log_message="Dependabot should be enabled for pip ecosystem",
     issue_title="Enable Dependabot for pip ecosystem",
     level="error",
-    check_cond=lambda repo: _has_requirements_txt(repo),
 )
 def _pip_dependabot(repo: Repository) -> RESULT:
+    if not _has_requirements_txt(repo):
+        return SKIP
     for update in _dependabot_config(repo).get("updates", []):
         if update.get("package-ecosystem") == "pip":
             return OK
@@ -676,9 +732,10 @@ def _job_runs(repo: Repository, workflows: list[str], pattern: str) -> bool:
     log_message="Missing GitHub Actions workflow for ruff linting",
     issue_title="Add Lint workflow for ruff",
     level="error",
-    check_cond=lambda repo: repo.language == "Python",
 )
 def _missing_ruff_error(repo: Repository) -> RESULT:
+    if repo.language != "Python":
+        return SKIP
     if _job_runs(repo, ["lint", "test"], "ruff ") is False:
         return FAIL
     return OK
@@ -689,9 +746,10 @@ def _missing_ruff_error(repo: Repository) -> RESULT:
     log_message="Missing GitHub Actions workflow for ruff linting",
     issue_title="Add Lint workflow for ruff",
     level="warning",
-    check_cond=lambda repo: ".py" in _file_extnames(repo),
 )
 def _missing_ruff_warning(repo: Repository) -> RESULT:
+    if ".py" not in _file_extnames(repo):
+        return SKIP
     if _job_runs(repo, ["lint", "test"], "ruff ") is False:
         return FAIL
     return OK
@@ -702,9 +760,10 @@ def _missing_ruff_warning(repo: Repository) -> RESULT:
     log_message="Missing GitHub Actions workflow for mypy type checking",
     issue_title="Add Lint workflow for mypy",
     level="error",
-    check_cond=lambda repo: repo.language == "Python",
 )
 def _missing_mypy(repo: Repository) -> RESULT:
+    if repo.language != "Python":
+        return SKIP
     if _job_runs(repo, ["lint", "test"], "mypy ") is False:
         return FAIL
     return OK
@@ -715,9 +774,10 @@ def _missing_mypy(repo: Repository) -> RESULT:
     log_message="Missing GitHub Actions workflow for shfmt linting",
     issue_title="Add Lint workflow for shfmt",
     level="warning",
-    check_cond=lambda repo: ".sh" in _file_extnames(repo),
 )
 def _missing_shfmt(repo: Repository) -> RESULT:
+    if ".sh" not in _file_extnames(repo):
+        return SKIP
     if _job_runs(repo, ["lint", "test"], "shfmt "):
         return OK
     return FAIL
@@ -728,9 +788,10 @@ def _missing_shfmt(repo: Repository) -> RESULT:
     log_message="Missing GitHub Actions workflow for shellcheck linting",
     issue_title="Add Lint workflow for shellcheck",
     level="warning",
-    check_cond=lambda repo: ".sh" in _file_extnames(repo),
 )
 def _missing_shellcheck(repo: Repository) -> RESULT:
+    if ".sh" not in _file_extnames(repo):
+        return SKIP
     if _job_runs(repo, ["lint", "test"], "shellcheck "):
         return OK
     return FAIL
