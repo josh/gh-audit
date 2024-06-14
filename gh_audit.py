@@ -753,6 +753,24 @@ def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
 
 
 @define_rule(
+    name="use-uv-pip",
+    log_message="Use uv to install pip dependencies",
+    issue_title="Use uv to install pip dependencies",
+    level="warning",
+)
+def _use_uv_pip(repo: Repository) -> RESULT:
+    if not _has_requirements_txt(repo):
+        return SKIP
+
+    for step in _iter_workflow_steps(repo):
+        run = step.get("run", "")
+        if re.search("pip install", run) and not re.search("uv pip install", run):
+            return FAIL
+
+    return OK
+
+
+@define_rule(
     name="disable-setup-python-cache",
     log_message="setup-python cache should be disabled when using uv",
     issue_title="Disable setup-python cache",
