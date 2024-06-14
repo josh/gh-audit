@@ -1,6 +1,6 @@
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -697,9 +697,16 @@ def _pip_dependabot(repo: Repository) -> RESULT:
     return FAIL
 
 
+# TODO: Deprecate this util
 @cache
 def _get_workflow(repo: Repository, name: str) -> dict[str, Any]:
-    contents = _get_contents(repo, path=f".github/workflows/{name}.yml")
+    return _get_workflow_by_path(repo, Path(f".github/workflows/{name}.yml"))
+
+
+@cache
+def _get_workflow_by_path(repo: Repository, path: Path) -> dict[str, Any]:
+    assert str(path).startswith(".github/workflows/"), path
+    contents = _get_contents(repo, path=str(path))
     if not contents:
         return dict()
     try:
@@ -711,19 +718,37 @@ def _get_workflow(repo: Repository, name: str) -> dict[str, Any]:
         return dict()
 
 
+@cache
+def _get_workflow_paths(repo: Repository) -> list[Path]:
+    paths: list[Path] = []
+    for path in _ls_tree(repo):
+        if (
+            len(path.parts) == 3
+            and path.parts[0] == ".github"
+            and path.parts[1] == "workflows"
+        ):
+            assert path.suffix == ".yml" or path.suffix == ".yaml"
+            paths.append(path)
+    return paths
+
+
+def _iter_workflow_jobs(repo: Repository) -> Iterator[tuple[str, dict[str, Any]]]:
+    for path in _get_workflow_paths(repo):
+        workflow = _get_workflow_by_path(repo, path)
+        yield from workflow.get("jobs", {}).items()
+
+
+def _iter_workflow_steps(repo: Repository) -> Iterator[dict[str, str]]:
+    for path in _get_workflow_paths(repo):
+        workflow = _get_workflow_by_path(repo, path)
+        for job in workflow.get("jobs", {}).values():
+            yield from job.get("steps", [])
+
+
 def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
     for workflow in workflows:
         if name in _get_workflow(repo, workflow).get("jobs", {}):
             return True
-    return False
-
-
-def _job_runs(repo: Repository, workflows: list[str], pattern: str) -> bool:
-    for workflow in workflows:
-        for name, job in _get_workflow(repo, workflow).get("jobs", {}).items():
-            for step in job.get("steps", []):
-                if re.search(pattern, step.get("run", "")):
-                    return True
     return False
 
 
@@ -736,8 +761,11 @@ def _job_runs(repo: Repository, workflows: list[str], pattern: str) -> bool:
 def _missing_ruff_error(repo: Repository) -> RESULT:
     if repo.language != "Python":
         return SKIP
-    if _job_runs(repo, ["lint", "test"], "ruff ") is False:
-        return FAIL
+
+    for step in _iter_workflow_steps(repo):
+        if re.search("ruff ", step.get("run", "")):
+            return OK
+
     return OK
 
 
@@ -750,8 +778,11 @@ def _missing_ruff_error(repo: Repository) -> RESULT:
 def _missing_ruff_warning(repo: Repository) -> RESULT:
     if ".py" not in _file_extnames(repo):
         return SKIP
-    if _job_runs(repo, ["lint", "test"], "ruff ") is False:
-        return FAIL
+
+    for step in _iter_workflow_steps(repo):
+        if re.search("ruff ", step.get("run", "")):
+            return OK
+
     return OK
 
 
@@ -764,8 +795,11 @@ def _missing_ruff_warning(repo: Repository) -> RESULT:
 def _missing_mypy(repo: Repository) -> RESULT:
     if repo.language != "Python":
         return SKIP
-    if _job_runs(repo, ["lint", "test"], "mypy ") is False:
-        return FAIL
+
+    for step in _iter_workflow_steps(repo):
+        if re.search("mypy ", step.get("run", "")):
+            return OK
+
     return OK
 
 
@@ -778,8 +812,11 @@ def _missing_mypy(repo: Repository) -> RESULT:
 def _missing_shfmt(repo: Repository) -> RESULT:
     if ".sh" not in _file_extnames(repo):
         return SKIP
-    if _job_runs(repo, ["lint", "test"], "shfmt "):
-        return OK
+
+    for step in _iter_workflow_steps(repo):
+        if re.search("shfmt ", step.get("run", "")):
+            return OK
+
     return FAIL
 
 
@@ -792,8 +829,11 @@ def _missing_shfmt(repo: Repository) -> RESULT:
 def _missing_shellcheck(repo: Repository) -> RESULT:
     if ".sh" not in _file_extnames(repo):
         return SKIP
-    if _job_runs(repo, ["lint", "test"], "shellcheck "):
-        return OK
+
+    for step in _iter_workflow_steps(repo):
+        if re.search("shellcheck ", step.get("run", "")):
+            return OK
+
     return FAIL
 
 
