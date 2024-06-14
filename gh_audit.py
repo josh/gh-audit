@@ -644,6 +644,7 @@ def _pip_dependabot(repo: Repository) -> RESULT:
     return FAIL
 
 
+@cache
 def _get_workflow(repo: Repository, name: str) -> dict[str, Any]:
     contents = _get_contents(repo, path=f".github/workflows/{name}.yml")
     if not contents:
