@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
+from pathlib import Path
 from typing import Any, Literal, cast
 
 import click
@@ -205,6 +206,16 @@ def _get_contents(repo: Repository, path: str) -> ContentFile | None:
     if isinstance(contents, list):
         return None
     return contents
+
+
+@cache
+def _ls_tree(repo: Repository) -> list[Path]:
+    return [Path(item.path) for item in repo.get_git_tree("HEAD", recursive=True).tree]
+
+
+@cache
+def _file_extnames(repo: Repository) -> set[str]:
+    return {path.suffix for path in _ls_tree(repo)} - {""}
 
 
 @cache
@@ -502,6 +513,15 @@ define_rule(
     level="error",
     check=lambda repo: _job_defined(repo, ["lint", "test"], "ruff") is False,
     check_cond=lambda repo: repo.language == "Python",
+)
+
+define_rule(
+    name="missing-ruff-lint-workflow",
+    log_message="Missing GitHub Actions workflow for ruff linting",
+    issue_title="Add Lint workflow for ruff",
+    level="warning",
+    check=lambda repo: _job_defined(repo, ["lint", "test"], "ruff") is False,
+    check_cond=lambda repo: ".py" in _file_extnames(repo),
 )
 
 define_rule(
