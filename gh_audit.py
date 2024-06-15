@@ -881,5 +881,37 @@ def _missing_shellcheck(repo: Repository) -> RESULT:
     return FAIL
 
 
+@define_rule(
+    name="git-commit-name",
+    log_message="Git commit name to github-actions",
+    issue_title="Change git commit name to github-actions",
+    level="error",
+)
+def _git_commit_name(repo: Repository) -> RESULT:
+    for step in _iter_workflow_steps(repo):
+        run = step.get("run", "")
+        if re.search("git config", run) and re.search("user.name", run):
+            if not re.search("github-actions\\[bot\\]", run):
+                return FAIL
+    return OK
+
+
+@define_rule(
+    name="git-commit-email",
+    log_message="Git commit email to github-actions",
+    issue_title="Change git commit email to github-actions",
+    level="error",
+)
+def _git_commit_email(repo: Repository) -> RESULT:
+    for step in _iter_workflow_steps(repo):
+        run = step.get("run", "")
+        if re.search("git config", run) and re.search("user.email", run):
+            if not re.search(
+                "41898282\\+github-actions\\[bot\\]@users\\.noreply\\.github\\.com", run
+            ):
+                return FAIL
+    return OK
+
+
 if __name__ == "__main__":
     main()
