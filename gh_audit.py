@@ -738,7 +738,7 @@ def _iter_workflow_jobs(repo: Repository) -> Iterator[tuple[str, dict[str, Any]]
         yield from workflow.get("jobs", {}).items()
 
 
-def _iter_workflow_steps(repo: Repository) -> Iterator[dict[str, str]]:
+def _iter_workflow_steps(repo: Repository) -> Iterator[dict[str, Any]]:
     for path in _get_workflow_paths(repo):
         workflow = _get_workflow_by_path(repo, path)
         for job in workflow.get("jobs", {}).values():
@@ -910,6 +910,22 @@ def _git_commit_email(repo: Repository) -> RESULT:
                 "41898282\\+github-actions\\[bot\\]@users\\.noreply\\.github\\.com", run
             ):
                 return FAIL
+    return OK
+
+
+@define_rule(
+    name="github-pat",
+    log_message="Avoid using GitHub PAT in Actions",
+    issue_title="Remove GitHub PAT from Actions",
+    level="warning",
+)
+def _github_pat(repo: Repository) -> RESULT:
+    for step in _iter_workflow_steps(repo):
+        env: dict[str, str] = step.get("env", {})
+        for name, value in env.items():
+            if value == "${{ secrets.GH_TOKEN }}":
+                return FAIL
+
     return OK
 
 
