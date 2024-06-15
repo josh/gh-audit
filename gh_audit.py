@@ -771,6 +771,22 @@ def _use_uv_pip(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="setup-python-with-python-version-file",
+    log_message="setup-python should use pyproject.toml",
+    issue_title="Use pyproject.toml with setup-python",
+    level="error",
+)
+def _setup_python_with_python_version_file(repo: Repository) -> RESULT:
+    for step in _iter_workflow_steps(repo):
+        if not step.get("uses", "").startswith("actions/setup-python"):
+            continue
+        if step.get("with", {}).get("python-version-file", "") != "pyproject.toml":
+            return FAIL
+
+    return OK
+
+
+@define_rule(
     name="disable-setup-python-cache",
     log_message="setup-python cache should be disabled when using uv",
     issue_title="Disable setup-python cache",
