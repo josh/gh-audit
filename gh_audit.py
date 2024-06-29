@@ -1,5 +1,6 @@
 import logging
 import re
+import tomllib
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from functools import cache
@@ -7,7 +8,6 @@ from pathlib import Path
 from typing import Any, Final, Literal, cast
 
 import click
-import tomllib
 import yaml
 from github import Auth, Github, GithubException
 from github.ContentFile import ContentFile
