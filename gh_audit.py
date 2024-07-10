@@ -622,16 +622,19 @@ def _requirements_txt_uv_compiled(repo: Repository) -> RESULT:
     return FAIL
 
 
+@cache
 def _has_requirements_txt(repo: Repository) -> bool:
     if _get_contents(repo, path="requirements.txt"):
         return True
     return False
 
 
+@cache
 def _requirements_txt(repo: Repository) -> str:
     return _get_contents_text(repo, path="requirements.txt")
 
 
+@cache
 def _requirements_txt_is_exact(repo: Repository) -> bool:
     if text := _requirements_txt(repo):
         for line in text.splitlines():
@@ -644,6 +647,19 @@ def _requirements_txt_is_exact(repo: Repository) -> bool:
         return True
     else:
         return True
+
+
+@cache
+def _requirements_txt_has_types(repo: Repository) -> bool:
+    if text := _requirements_txt(repo):
+        for line in text.splitlines():
+            if line.lstrip().startswith("#"):
+                continue
+            if "types-" in line:
+                return True
+        return False
+    else:
+        return False
 
 
 @cache
@@ -694,6 +710,25 @@ def _pip_dependabot(repo: Repository) -> RESULT:
     for update in _dependabot_config(repo).get("updates", []):
         if update.get("package-ecosystem") == "pip":
             return OK
+    return FAIL
+
+
+@define_rule(
+    name="pip-dependabot-ignore-types",
+    log_message="Dependabot should ignore types-* packages",
+    issue_title="Ignore types-* packages in Dependabot",
+    level="warning",
+)
+def _dependabot_ignores_pip_types(repo: Repository) -> RESULT:
+    if not _has_requirements_txt(repo):
+        return SKIP
+
+    for update in _dependabot_config(repo).get("updates", []):
+        if update.get("package-ecosystem") == "pip":
+            for ignored in update.get("ignore", []):
+                if ignored.get("dependency-name") == "types-*":
+                    return OK
+
     return FAIL
 
 
