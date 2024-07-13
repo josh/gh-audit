@@ -28,14 +28,27 @@ logger = logging.getLogger(__name__)
     metavar="TOKEN",
 )
 @click.option("--verbose", is_flag=True, default=False, help="Enable debug logging")
+@click.option(
+    "--format",
+    type=click.Choice(["repo", "rule"], case_sensitive=False),
+    default="repo",
+    required=True,
+)
 @click.version_option()
 def main(
     repository: list[str],
     active: bool,
+    format: Literal["repo", "rule"],
     github_token: str,
     verbose: bool,
 ) -> None:
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+
+    global rule_message_format
+    if format == "repo":
+        rule_message_format = "{repo}: {level} {log_message} [{rule}]"
+    elif format == "rule":
+        rule_message_format = "{rule}: {level} {log_message} [{repo}]"
 
     with Github(auth=Auth.Token(github_token)) as g:
         user = g.get_user()
@@ -59,6 +72,7 @@ OK: Final = "OK"
 SKIP: Final = "OK"
 FAIL: Final = "FAIL"
 RESULT = Literal["OK", "FAIL"]
+rule_message_format = "{repo}: {level} {log_message} [{name}]"
 
 
 @dataclass
@@ -72,13 +86,18 @@ class Rule:
     def __call__(self, repo: Repository) -> bool:
         if self.check(repo) is FAIL:
             if self.level == "warning":
-                click.echo(
-                    f"{repo.full_name}: \033[33mwarn:\033[0m {self.log_message} [{self.name}]"
-                )
+                level = "\033[33mwarn:\033[0m"
             elif self.level == "error":
-                click.echo(
-                    f"{repo.full_name}: \033[31merror:\033[0m {self.log_message} [{self.name}]"
-                )
+                level = "\033[31merror:\033[0m"
+
+            formatted_message = rule_message_format.format(
+                rule=self.name,
+                repo=repo.full_name,
+                level=level,
+                log_message=self.log_message,
+            )
+            click.echo(formatted_message)
+
             return False
         return True
 
