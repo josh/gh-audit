@@ -1,5 +1,6 @@
 import logging
 import re
+import subprocess
 import tomllib
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
@@ -16,6 +17,19 @@ from github.Repository import Repository
 logger = logging.getLogger(__name__)
 
 
+def _gh_auth_token() -> str | None:
+    try:
+        p = subprocess.run(
+            ["gh", "auth", "token"],
+            check=True,
+            capture_output=True,
+            encoding="utf-8",
+        )
+        return p.stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+
 @click.command()
 @click.argument("repository", nargs=-1)
 @click.option(
@@ -26,6 +40,8 @@ logger = logging.getLogger(__name__)
     envvar="GITHUB_TOKEN",
     help="GitHub API token",
     metavar="TOKEN",
+    required=True,
+    default=_gh_auth_token(),
 )
 @click.option("--verbose", is_flag=True, default=False, help="Enable debug logging")
 @click.option(
