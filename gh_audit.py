@@ -850,6 +850,8 @@ def _setup_python_with_python_version_file(repo: Repository) -> RESULT:
     for step in _iter_workflow_steps(repo):
         if not step.get("uses", "").startswith("actions/setup-python"):
             continue
+        if "matrix" in step.get("with", {}).get("python-version", ""):
+            continue
         if step.get("with", {}).get("python-version-file", "") != "pyproject.toml":
             return FAIL
 
