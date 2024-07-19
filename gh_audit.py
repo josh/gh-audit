@@ -999,38 +999,38 @@ def _github_pat(repo: Repository) -> RESULT:
     return OK
 
 
-@define_rule(
-    name="wip-contents-write-permissions",
-    log_message="Contents should not have write permissions",
-    issue_title="Remove write permissions from contents",
-    level="warning",
-)
-def _contents_write_permissions(repo: Repository) -> RESULT:
-    for path in _get_workflow_paths(repo):
-        workflow = _get_workflow_by_path(repo, path)
+# @define_rule(
+#     name="wip-contents-write-permissions",
+#     log_message="Contents should not have write permissions",
+#     issue_title="Remove write permissions from contents",
+#     level="warning",
+# )
+# def _contents_write_permissions(repo: Repository) -> RESULT:
+#     for path in _get_workflow_paths(repo):
+#         workflow = _get_workflow_by_path(repo, path)
+#
+#         if workflow.get("permissions", {}).get("contents", "") == "write":
+#             return FAIL
+#
+#         for job in workflow.get("jobs", {}).values():
+#             if job.get("permissions", {}).get("contents", "") == "write":
+#                 return FAIL
+#
+#     return OK
 
-        if workflow.get("permissions", {}).get("contents", "") == "write":
-            return FAIL
 
-        for job in workflow.get("jobs", {}).values():
-            if job.get("permissions", {}).get("contents", "") == "write":
-                return FAIL
-
-    return OK
-
-
-@define_rule(
-    name="wip-git-push",
-    log_message="Should not git push in Actions",
-    issue_title="Avoid git push in Actions",
-    level="warning",
-)
-def _git_push(repo: Repository) -> RESULT:
-    for step in _iter_workflow_steps(repo):
-        run = step.get("run", "")
-        if re.search("git push", run):
-            return FAIL
-    return OK
+# @define_rule(
+#     name="wip-git-push",
+#     log_message="Should not git push in Actions",
+#     issue_title="Avoid git push in Actions",
+#     level="warning",
+# )
+# def _git_push(repo: Repository) -> RESULT:
+#     for step in _iter_workflow_steps(repo):
+#         run = step.get("run", "")
+#         if re.search("git push", run):
+#             return FAIL
+#     return OK
 
 
 @define_rule(
