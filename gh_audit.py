@@ -30,6 +30,19 @@ def _gh_auth_token() -> str | None:
         return None
 
 
+class RuleParamType(click.ParamType):
+    name = "rule"
+
+    def convert(self, value: str, param: Any, ctx: Any) -> "Rule":
+        for rule in RULES:
+            if rule.name == value:
+                return rule
+        self.fail(f"Unknown rule: {value}", param, ctx)
+
+
+_RULE_TYPE = RuleParamType()
+
+
 @click.command()
 @click.argument("repository", nargs=-1)
 @click.option(
@@ -44,7 +57,13 @@ def _gh_auth_token() -> str | None:
     default=_gh_auth_token(),
 )
 @click.option("--verbose", is_flag=True, default=False, help="Enable debug logging")
-@click.option("--rule", "filter_rules", multiple=True, help="Specify rules to run")
+@click.option(
+    "--rule",
+    "override_rules",
+    type=_RULE_TYPE,
+    multiple=True,
+    help="Specify rules to run",
+)
 @click.option(
     "--format",
     type=click.Choice(["repo", "rule"], case_sensitive=False),
@@ -55,7 +74,7 @@ def _gh_auth_token() -> str | None:
 def main(
     repository: list[str],
     active: bool,
-    filter_rules: list[str],
+    override_rules: tuple["Rule", ...],
     format: Literal["repo", "rule"],
     github_token: str,
     verbose: bool,
@@ -63,8 +82,8 @@ def main(
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
 
     rules: list[Rule] = RULES
-    if filter_rules:
-        rules = [rule for rule in rules if rule.name in filter_rules]
+    if override_rules:
+        rules = list(override_rules)
     logger.debug("Applying %d rules", len(rules))
 
     global rule_message_format
