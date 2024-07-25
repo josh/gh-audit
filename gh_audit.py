@@ -44,6 +44,7 @@ def _gh_auth_token() -> str | None:
     default=_gh_auth_token(),
 )
 @click.option("--verbose", is_flag=True, default=False, help="Enable debug logging")
+@click.option("--rule", "filter_rules", multiple=True, help="Specify rules to run")
 @click.option(
     "--format",
     type=click.Choice(["repo", "rule"], case_sensitive=False),
@@ -54,11 +55,17 @@ def _gh_auth_token() -> str | None:
 def main(
     repository: list[str],
     active: bool,
+    filter_rules: list[str],
     format: Literal["repo", "rule"],
     github_token: str,
     verbose: bool,
 ) -> None:
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+
+    rules: list[Rule] = RULES
+    if filter_rules:
+        rules = [rule for rule in rules if rule.name in filter_rules]
+    logger.debug("Applying %d rules", len(rules))
 
     global rule_message_format
     if format == "repo":
@@ -71,7 +78,7 @@ def main(
 
         for name in repository:
             repo = user.get_repo(name)
-            for rule in RULES:
+            for rule in rules:
                 rule(repo=repo)
 
         if active:
@@ -80,7 +87,7 @@ def main(
                     continue
                 if repo.archived:
                     continue
-                for rule in RULES:
+                for rule in rules:
                     rule(repo=repo)
 
 
