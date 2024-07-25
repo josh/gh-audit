@@ -767,6 +767,18 @@ def _dependabot_ignores_pip_types(repo: Repository) -> RESULT:
     return FAIL
 
 
+@define_rule(
+    name="no-devcontainer",
+    log_message="Avoid using devcontainers",
+    issue_title="Remove devcontainer",
+    level="warning",
+)
+def _no_devcontainer(repo: Repository) -> RESULT:
+    if _get_contents(repo, path=".devcontainer/devcontainer.json"):
+        return FAIL
+    return OK
+
+
 # TODO: Deprecate this util
 @cache
 def _get_workflow(repo: Repository, name: str) -> dict[str, Any]:
