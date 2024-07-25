@@ -1088,5 +1088,19 @@ def _git_push_concurrency_group(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="git-push-if-commited",
+    log_message="git push step should only run if changes are commited",
+    issue_title="Only run git push if changes are commited",
+    level="error",
+)
+def _git_push_if_commited(repo: Repository) -> RESULT:
+    for step in _iter_workflow_steps(repo):
+        run = step.get("run", "")
+        if re.search("git push", run) and "if" not in step:
+            return FAIL
+    return OK
+
+
 if __name__ == "__main__":
     main()
