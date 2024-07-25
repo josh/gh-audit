@@ -1064,5 +1064,29 @@ def _gh_pages_branch(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="git-push-concurrency-group",
+    log_message="Jobs that use git push must be in a concurrency group",
+    issue_title="Use concurrency group for jobs that use git push",
+    level="error",
+)
+def _git_push_concurrency_group(repo: Repository) -> RESULT:
+    for path in _get_workflow_paths(repo):
+        workflow = _get_workflow_by_path(repo, path)
+        workflow_has_concurrency_group = "concurrency" in workflow
+
+        for name, job in workflow.get("jobs", {}).items():
+            job_has_concurrency_group = (
+                workflow_has_concurrency_group or "concurrency" in job
+            )
+            job_has_git_push = False
+            for step in job.get("steps", []):
+                if re.search("git push", step.get("run", "")):
+                    job_has_git_push = True
+            if job_has_git_push and not job_has_concurrency_group:
+                return FAIL
+    return OK
+
+
 if __name__ == "__main__":
     main()
