@@ -1054,6 +1054,37 @@ def _github_pat(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="no-workflow-env-secrets",
+    log_message="Do not expose secrets to entire workflow environment",
+    issue_title="Limit secrets to individual steps",
+    level="warning",
+)
+def _no_workflow_env_secrets(repo: Repository) -> RESULT:
+    for path in _get_workflow_paths(repo):
+        workflow = _get_workflow_by_path(repo, path)
+        env = workflow.get("env", {})
+        for value in env.values():
+            if "${{ secrets." in value:
+                return FAIL
+    return OK
+
+
+@define_rule(
+    name="no-job-env-secrets",
+    log_message="Do not expose secrets to entire job environment",
+    issue_title="Limit secrets to individual steps",
+    level="warning",
+)
+def _no_job_env_secrets(repo: Repository) -> RESULT:
+    for _, job in _iter_workflow_jobs(repo):
+        env = job.get("env", {})
+        for value in env.values():
+            if "${{ secrets." in value:
+                return FAIL
+    return OK
+
+
 # @define_rule(
 #     name="wip-contents-write-permissions",
 #     log_message="Contents should not have write permissions",
