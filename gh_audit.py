@@ -841,6 +841,24 @@ def _use_uv_pip(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="uv-pip-install-with-requirements",
+    log_message="Use uv pip install with requirements.txt",
+    issue_title="Use uv pip install with requirements.txt",
+    level="error",
+)
+def _uv_pip_install_with_requirements(repo: Repository) -> RESULT:
+    if not _has_requirements_txt(repo):
+        return SKIP
+
+    for step in _iter_workflow_steps(repo):
+        run = step.get("run", "")
+        if re.search("uv pip install", run) and not re.search("requirements.txt", run):
+            return FAIL
+
+    return OK
+
+
+@define_rule(
     name="setup-python-with-python-version-file",
     log_message="setup-python should use pyproject.toml",
     issue_title="Use pyproject.toml with setup-python",
