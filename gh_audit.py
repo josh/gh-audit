@@ -1065,6 +1065,25 @@ def _gh_pages_branch(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="on-push-only",
+    log_message="Don't trigger workflow on pull_request",
+    issue_title="Only trigger workflow on push",
+    level="error",
+)
+def _on_push_only(repo: Repository) -> RESULT:
+    for path in _get_workflow_paths(repo):
+        workflow = _get_workflow_by_path(repo, path)
+        on: str | list[str] | dict[str, Any] = cast(Any, workflow).get(True, {})
+        if on == "pull_request":
+            return FAIL
+        if isinstance(on, list) and "pull_request" in on:
+            return FAIL
+        if isinstance(on, dict) and "pull_request" in on:
+            return FAIL
+    return OK
+
+
+@define_rule(
     name="git-push-concurrency-group",
     log_message="Jobs that use git push must be in a concurrency group",
     issue_title="Use concurrency group for jobs that use git push",
