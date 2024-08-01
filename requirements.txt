@@ -32,7 +32,7 @@ pyyaml==6.0.1
     # via gh-audit (pyproject.toml)
 requests==2.32.3
     # via pygithub
-ruff==0.5.1
+ruff==0.5.5
     # via gh-audit (pyproject.toml)
 types-pyyaml==6.0.12.20240311
     # via gh-audit (pyproject.toml)
