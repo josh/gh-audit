@@ -22,7 +22,7 @@ mypy-extensions==1.0.0
     # via mypy
 pycparser==2.22
     # via cffi
-pygithub==2.3.0
+pygithub==2.4.0
     # via gh-audit (pyproject.toml)
 pyjwt==2.9.0
     # via pygithub
