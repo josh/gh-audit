@@ -1227,5 +1227,27 @@ def _git_push_if_commited(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="dependabot-github-actions",
+    log_message="Dependabot should be enabled for GitHub Actions if workflows are present",
+    issue_title="Enable Dependabot for GitHub Actions ecosystem",
+    level="error",
+)
+def _github_actions_dependabot(repo: Repository) -> RESULT:
+    if not _has_workflow_files(repo):
+        return SKIP
+    for update in _dependabot_config(repo).get("updates", []):
+        if update.get("package-ecosystem") == "github-actions":
+            return OK
+    return FAIL
+
+@cache
+def _has_workflow_files(repo: Repository) -> bool:
+    for path in _ls_tree(repo):
+        if str(path).startswith(".github/workflows/"):
+            return True
+    return False
+
+
 if __name__ == "__main__":
     main()
