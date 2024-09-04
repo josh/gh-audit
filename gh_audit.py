@@ -1241,6 +1241,7 @@ def _github_actions_dependabot(repo: Repository) -> RESULT:
             return OK
     return FAIL
 
+
 @cache
 def _has_workflow_files(repo: Repository) -> bool:
     for path in _ls_tree(repo):
