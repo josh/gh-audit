@@ -1049,6 +1049,23 @@ def _use_uv_pip(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="setup-uv",
+    log_message="Use astral-sh/setup-uv",
+    issue_title="Use astral-sh/setup-uv",
+    level="error",
+)
+def _setup_uv(repo: Repository) -> RESULT:
+    for step in _iter_workflow_steps(repo):
+        uses = step.get("uses", "")
+        run = step.get("run", "")
+        if uses.startswith("astral-sh/setup-uv"):
+            return OK
+        if re.search("pipx install uv", run):
+            return FAIL
+    return OK
+
+
+@define_rule(
     name="uv-pip-install-with-requirements",
     log_message="Use uv pip install with requirements.txt",
     issue_title="Use uv pip install with requirements.txt",
