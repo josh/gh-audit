@@ -777,6 +777,18 @@ def _dependabot_update_schedule_intervals(repo: Repository) -> set[str]:
 
 
 @define_rule(
+    name="delete-branch-on-merge",
+    log_message="Repository should delete branches on merge",
+    issue_title="Enable delete branches on merge",
+    level="error",
+)
+def _delete_branch_on_merge(repo: Repository) -> RESULT:
+    if repo.delete_branch_on_merge:
+        return OK
+    return FAIL
+
+
+@define_rule(
     name="allow-auto-merge",
     log_message="Repository should allow auto-merge",
     issue_title="Enable allow auto-merge",
