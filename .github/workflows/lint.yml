@@ -6,6 +6,9 @@ jobs:
   ruff:
     runs-on: ubuntu-latest
 
+    env:
+      RUFF_OUTPUT_FORMAT: github
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,13 +25,9 @@ jobs:
 
       - name: Ruff Formatter
         run: ruff format --diff .
-        env:
-          RUFF_OUTPUT_FORMAT: github
 
       - name: Ruff Linter
         run: ruff check .
-        env:
-          RUFF_OUTPUT_FORMAT: github
 
   mypy:
     runs-on: ubuntu-latest
