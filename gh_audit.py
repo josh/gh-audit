@@ -777,6 +777,22 @@ def _dependabot_update_schedule_intervals(repo: Repository) -> set[str]:
 
 
 @define_rule(
+    name="allow-auto-merge",
+    log_message="Repository should allow auto-merge",
+    issue_title="Enable allow auto-merge",
+    level="warning",
+)
+def _auto_merge(repo: Repository) -> RESULT:
+    if repo.fork:
+        return SKIP
+    if not _dependabot_config(repo):
+        return SKIP
+    if repo.allow_auto_merge:
+        return OK
+    return FAIL
+
+
+@define_rule(
     name="dependabot-schedule-monthly",
     log_message="Dependabot should be scheduled monthly",
     issue_title="Schedule Dependabot monthly",
