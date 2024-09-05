@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
-from typing import Any, Final, Literal, cast
+from typing import Any, Final, Literal, NotRequired, TypedDict, cast
 
 import click
 import yaml
@@ -908,19 +908,24 @@ def _no_devcontainer(repo: Repository) -> RESULT:
 )
 def _actions_allowed_actions_all(repo: Repository) -> RESULT:
     permissions = _get_actions_permissions(repo)
-    if permissions.get("enabled", False) is False:
+    if permissions["enabled"] is False:
         return SKIP
     if permissions.get("allowed_actions") != "all":
         return FAIL
     return OK
 
 
+class RepositoryActionPermissions(TypedDict):
+    enabled: bool
+    allowed_actions: NotRequired[str]
+
+
 @cache
-def _get_actions_permissions(repo: Repository) -> dict[str, Any]:
+def _get_actions_permissions(repo: Repository) -> RepositoryActionPermissions:
     _, data = repo._requester.requestJsonAndCheck(
         "GET", f"{repo.url}/actions/permissions"
     )
-    return data
+    return cast(RepositoryActionPermissions, data)
 
 
 # TODO: Deprecate this util
