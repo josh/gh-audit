@@ -900,6 +900,29 @@ def _no_devcontainer(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="allows-all-actions",
+    log_message="Repository should allow all actions",
+    issue_title="Allow all actions and reusable workflows",
+    level="warning",
+)
+def _actions_allowed_actions_all(repo: Repository) -> RESULT:
+    permissions = _get_actions_permissions(repo)
+    if permissions.get("enabled", False) is False:
+        return SKIP
+    if permissions.get("allowed_actions") != "all":
+        return FAIL
+    return OK
+
+
+@cache
+def _get_actions_permissions(repo: Repository) -> dict[str, Any]:
+    _, data = repo._requester.requestJsonAndCheck(
+        "GET", f"{repo.url}/actions/permissions"
+    )
+    return data
+
+
 # TODO: Deprecate this util
 @cache
 def _get_workflow(repo: Repository, name: str) -> dict[str, Any]:
