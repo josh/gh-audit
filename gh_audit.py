@@ -805,6 +805,42 @@ def _auto_merge(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="enable-merge-commit",
+    log_message="Repository should allow merge commits",
+    issue_title="Enable merge commits",
+    level="warning",
+)
+def _enable_merge_commit(repo: Repository) -> RESULT:
+    if repo.allow_merge_commit:
+        return OK
+    return FAIL
+
+
+@define_rule(
+    name="disable-squash-merge",
+    log_message="Repository should not allow squash merging",
+    issue_title="Disable squash merging",
+    level="warning",
+)
+def _disable_squash_merge(repo: Repository) -> RESULT:
+    if not repo.allow_squash_merge:
+        return OK
+    return FAIL
+
+
+@define_rule(
+    name="disable-rebase-merge",
+    log_message="Repository should not allow rebase merging",
+    issue_title="Disable rebase merging",
+    level="warning",
+)
+def _disable_rebase_merge(repo: Repository) -> RESULT:
+    if not repo.allow_rebase_merge:
+        return OK
+    return FAIL
+
+
+@define_rule(
     name="dependabot-schedule-monthly",
     log_message="Dependabot should be scheduled monthly",
     issue_title="Schedule Dependabot monthly",
