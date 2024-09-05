@@ -15,8 +15,6 @@ jobs:
           python-version-file: "pyproject.toml"
 
       - uses: astral-sh/setup-uv@v1
-        with:
-          version: "latest"
 
       - name: Install ruff
         run: |
@@ -44,8 +42,6 @@ jobs:
           python-version-file: "pyproject.toml"
 
       - uses: astral-sh/setup-uv@v1
-        with:
-          version: "latest"
 
       - name: Install dependencies
         run: |
