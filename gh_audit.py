@@ -915,9 +915,48 @@ def _actions_allowed_actions_all(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="allow-workflow-write-permissions",
+    log_message="Allow Actions read and write permissions",
+    issue_title="Allow Actions read and write permissions",
+    level="warning",
+)
+def _allow_workflow_write_permissions(repo: Repository) -> RESULT:
+    if repo.fork:
+        return SKIP
+    if not _get_actions_permissions(repo)["enabled"]:
+        return SKIP
+    permissions = _get_workflow_permissions(repo)
+    if permissions["default_workflow_permissions"] != "write":
+        return FAIL
+    return OK
+
+
+@define_rule(
+    name="allow-actions-approve-prs",
+    log_message="Allow Actions to approve pull request reviews",
+    issue_title="Allow Actions to approve pull request reviews",
+    level="warning",
+)
+def _allow_actions_approve_prs(repo: Repository) -> RESULT:
+    if repo.fork:
+        return SKIP
+    if not _get_actions_permissions(repo)["enabled"]:
+        return SKIP
+    permissions = _get_workflow_permissions(repo)
+    if permissions["can_approve_pull_request_reviews"]:
+        return OK
+    return FAIL
+
+
 class RepositoryActionPermissions(TypedDict):
     enabled: bool
     allowed_actions: NotRequired[str]
+
+
+class RepositoryWorkflowPermissions(TypedDict):
+    default_workflow_permissions: Literal["read", "write"]
+    can_approve_pull_request_reviews: bool
 
 
 @cache
@@ -926,6 +965,14 @@ def _get_actions_permissions(repo: Repository) -> RepositoryActionPermissions:
         "GET", f"{repo.url}/actions/permissions"
     )
     return cast(RepositoryActionPermissions, data)
+
+
+@cache
+def _get_workflow_permissions(repo: Repository) -> RepositoryWorkflowPermissions:
+    _, data = repo._requester.requestJsonAndCheck(
+        "GET", f"{repo.url}/actions/permissions/workflow"
+    )
+    return cast(RepositoryWorkflowPermissions, data)
 
 
 # TODO: Deprecate this util
