@@ -263,10 +263,22 @@ def _no_projects(repo: Repository) -> RESULT:
     name="no-wiki",
     log_message="Repository has Wiki enabled",
     issue_title="Disable GitHub Wiki",
-    level="warning",
+    level="error",
 )
 def _no_wiki(repo: Repository) -> RESULT:
     if repo.has_wiki:
+        return FAIL
+    return OK
+
+
+@define_rule(
+    name="no-discussions",
+    log_message="Repository has Discussions enabled",
+    issue_title="Disable GitHub Discussions",
+    level="error",
+)
+def _no_discussions(repo: Repository) -> RESULT:
+    if repo.has_discussions:
         return FAIL
     return OK
 
