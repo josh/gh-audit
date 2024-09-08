@@ -519,38 +519,6 @@ def _missing_pyproject_requires_python(repo: Repository) -> RESULT:
     return FAIL
 
 
-@define_rule(
-    name="missing-pyproject-requires-python-3-12",
-    log_message="project.requires-python should be 3.10 or older",
-    issue_title="Use project.requires-python >= '3.10'",
-    level="warning",
-)
-def _missing_pyproject_requires_python_3_12(repo: Repository) -> RESULT:
-    pyproject = _load_pyproject(repo)
-    if not pyproject:
-        return SKIP
-
-    if _pyproject_requires_python(repo) == ">=3.12":
-        return FAIL
-    return OK
-
-
-@define_rule(
-    name="missing-pyproject-requires-python-3-11",
-    log_message="project.requires-python should be 3.10 or older",
-    issue_title="Use project.requires-python >= '3.10'",
-    level="warning",
-)
-def _missing_pyproject_requires_python_3_11(repo: Repository) -> RESULT:
-    pyproject = _load_pyproject(repo)
-    if not pyproject:
-        return SKIP
-
-    if _pyproject_requires_python(repo) == ">=3.11":
-        return FAIL
-    return OK
-
-
 @cache
 def _pyproject_all_dependencies(repo: Repository) -> set[str]:
     deps: set[str] = set()
