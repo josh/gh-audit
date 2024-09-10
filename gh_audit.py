@@ -846,15 +846,16 @@ def _disable_actions(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="allows-all-actions",
-    log_message="Repository should allow all actions",
+    name="disable-all-actions",
+    log_message="Repository should not allow all actions",
     level="warning",
 )
 def _actions_allowed_actions_all(repo: Repository) -> RESULT:
     permissions = _get_actions_permissions(repo)
     if permissions["enabled"] is False:
         return SKIP
-    if permissions.get("allowed_actions") != "all":
+    allowed_actions = permissions.get("allowed_actions")
+    if allowed_actions == "all":
         return FAIL
     return OK
 
@@ -893,7 +894,7 @@ def _allow_actions_approve_prs(repo: Repository) -> RESULT:
 
 class RepositoryActionPermissions(TypedDict):
     enabled: bool
-    allowed_actions: NotRequired[str]
+    allowed_actions: NotRequired[Literal["all", "local_only", "selected"]]
 
 
 class RepositoryWorkflowPermissions(TypedDict):
