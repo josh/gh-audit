@@ -831,6 +831,21 @@ def _no_devcontainer(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="disable-actions",
+    log_message="Repository without workflows should disable Actions",
+    level="error",
+)
+def _disable_actions(repo: Repository) -> RESULT:
+    if _get_workflow_paths(repo):
+        return SKIP
+    permissions = _get_actions_permissions(repo)
+    if permissions["enabled"]:
+        return FAIL
+    else:
+        return OK
+
+
+@define_rule(
     name="allows-all-actions",
     log_message="Repository should allow all actions",
     level="warning",
