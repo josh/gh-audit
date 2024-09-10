@@ -957,6 +957,13 @@ def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
     return False
 
 
+def _any_job_defined(repo: Repository, job_name: str) -> bool:
+    for name, _ in _iter_workflow_jobs(repo):
+        if name == job_name:
+            return True
+    return False
+
+
 @define_rule(
     name="use-uv-pip",
     log_message="Use uv to install pip dependencies",
@@ -1076,6 +1083,49 @@ def _missing_ruff_warning(repo: Repository) -> RESULT:
             return OK
 
     return OK
+
+
+class RepositoryRulesetRequiredStatusCheck(TypedDict):
+    context: str
+
+
+class RepositoryRulesetRequiredStatusChecksParameters(TypedDict):
+    required_status_checks: list[RepositoryRulesetRequiredStatusCheck]
+
+
+class RepositoryRulesetRequiredStatusChecks(TypedDict):
+    type: Literal["required_status_checks"]
+    parameters: RepositoryRulesetRequiredStatusChecksParameters
+
+
+RepositoryRuleset = RepositoryRulesetRequiredStatusChecks
+
+
+@cache
+def _get_repo_rulesets(
+    repo: Repository, branch: str = "main"
+) -> list[RepositoryRuleset]:
+    _, data = repo._requester.requestJsonAndCheck(
+        "GET", f"{repo.url}/rules/branches/{branch}"
+    )
+    return cast(list[RepositoryRuleset], data)
+
+
+@define_rule(
+    name="required-ruff-status-check",
+    log_message="Add Ruleset to require 'ruff' status check",
+    level="warning",
+)
+def _required_ruff_status_check(repo: Repository) -> RESULT:
+    if not _any_job_defined(repo, "ruff"):
+        return SKIP
+
+    for ruleset in _get_repo_rulesets(repo):
+        if ruleset["type"] == "required_status_checks":
+            for check in ruleset["parameters"]["required_status_checks"]:
+                if check["context"] == "ruff":
+                    return OK
+    return FAIL
 
 
 @define_rule(
