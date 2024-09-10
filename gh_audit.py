@@ -121,7 +121,6 @@ rule_message_format = "{repo}: {level} {log_message} [{name}]"
 class Rule:
     name: str
     log_message: str
-    issue_title: str
     level: Literal["error", "warning"]
     check: Callable[[Repository], RESULT]
 
@@ -158,7 +157,6 @@ def define_rule(**kwargs: Any) -> Callable[[Callable[[Repository], RESULT]], Non
 @define_rule(
     name="missing-description",
     log_message="Missing repository description",
-    issue_title="Set repository description",
     level="error",
 )
 def _missing_description(repo: Repository) -> RESULT:
@@ -170,7 +168,6 @@ def _missing_description(repo: Repository) -> RESULT:
 @define_rule(
     name="missing-license",
     log_message="Missing license file",
-    issue_title="Add a LICENSE",
     level="error",
 )
 def _missing_license(repo: Repository) -> RESULT:
@@ -188,7 +185,6 @@ def _missing_license(repo: Repository) -> RESULT:
 @define_rule(
     name="non-mit-license",
     log_message="Using non-MIT license",
-    issue_title="Prefer using MIT License",
     level="warning",
 )
 def _non_mit_license(repo: Repository) -> RESULT:
@@ -202,7 +198,6 @@ def _non_mit_license(repo: Repository) -> RESULT:
 @define_rule(
     name="missing-readme",
     log_message="Missing README file",
-    issue_title="Add a README",
     level="error",
 )
 def _missing_readme(repo: Repository) -> RESULT:
@@ -214,7 +209,6 @@ def _missing_readme(repo: Repository) -> RESULT:
 @define_rule(
     name="missing-topics",
     log_message="Missing topics",
-    issue_title="Add topics",
     level="error",
 )
 def _missing_topics(repo: Repository) -> RESULT:
@@ -226,7 +220,6 @@ def _missing_topics(repo: Repository) -> RESULT:
 @define_rule(
     name="too-few-topics",
     log_message="Only one topic",
-    issue_title="Add more topics",
     level="warning",
 )
 def _too_few_topics(repo: Repository) -> RESULT:
@@ -238,7 +231,6 @@ def _too_few_topics(repo: Repository) -> RESULT:
 @define_rule(
     name="has-issues",
     log_message="Repository doesn't have Issues enabled",
-    issue_title="Enable GitHub Issues",
     level="warning",
 )
 def _has_issues(repo: Repository) -> RESULT:
@@ -250,7 +242,6 @@ def _has_issues(repo: Repository) -> RESULT:
 @define_rule(
     name="no-projects",
     log_message="Repository has Projects enabled",
-    issue_title="Disable GitHub Projects",
     level="warning",
 )
 def _no_projects(repo: Repository) -> RESULT:
@@ -262,7 +253,6 @@ def _no_projects(repo: Repository) -> RESULT:
 @define_rule(
     name="no-wiki",
     log_message="Repository has Wiki enabled",
-    issue_title="Disable GitHub Wiki",
     level="error",
 )
 def _no_wiki(repo: Repository) -> RESULT:
@@ -274,7 +264,6 @@ def _no_wiki(repo: Repository) -> RESULT:
 @define_rule(
     name="no-discussions",
     log_message="Repository has Discussions enabled",
-    issue_title="Disable GitHub Discussions",
     level="error",
 )
 def _no_discussions(repo: Repository) -> RESULT:
@@ -287,7 +276,6 @@ def _no_discussions(repo: Repository) -> RESULT:
 @define_rule(
     name="git-size",
     log_message="Repository size is too large",
-    issue_title="Reduce repository size",
     level="error",
 )
 def _git_size_error(repo: Repository) -> RESULT:
@@ -300,7 +288,6 @@ def _git_size_error(repo: Repository) -> RESULT:
 @define_rule(
     name="git-size",
     log_message="Repository size is too large",
-    issue_title="Reduce repository size",
     level="warning",
 )
 def _git_size_warning(repo: Repository) -> RESULT:
@@ -359,7 +346,6 @@ def _load_pyproject(repo: Repository) -> dict[str, Any]:
 @define_rule(
     name="missing-pyproject",
     log_message="Missing pyproject.toml",
-    issue_title="Add a pyproject.toml",
     level="error",
 )
 def _missing_pyproject(repo: Repository) -> RESULT:
@@ -373,7 +359,6 @@ def _missing_pyproject(repo: Repository) -> RESULT:
 @define_rule(
     name="missing-pyproject-project-name",
     log_message="project.name missing in pyproject.toml",
-    issue_title="Add project.name to pyproject.toml",
     level="error",
 )
 def _missing_pyproject_project_name(repo: Repository) -> RESULT:
@@ -396,7 +381,6 @@ _MIT_LICENSE_CLASSIFIER = "License :: OSI Approved :: MIT License"
 @define_rule(
     name="pyproject-mit-license-classifier",
     log_message="License classifier missing in pyproject.toml",
-    issue_title="Add License classifier to pyproject.toml",
     level="error",
 )
 def _pyproject_mit_license_classifier(repo: Repository) -> RESULT:
@@ -432,7 +416,6 @@ def _pyproject_author_emails(repo: Repository) -> set[str]:
 @define_rule(
     name="pyproject-omit-license",
     log_message="License classifier should be omitted when using MIT License",
-    issue_title="Omit License classifier in pyproject.toml",
     level="warning",
 )
 def _pyproject_omit_license(repo: Repository) -> RESULT:
@@ -452,7 +435,6 @@ def _pyproject_omit_license(repo: Repository) -> RESULT:
 @define_rule(
     name="pyproject-author-name",
     log_message="project.authors[0].name missing in pyproject.toml",
-    issue_title="Add a project.authors name to pyproject.toml",
     level="warn",
 )
 def _pyproject_author_name(repo: Repository) -> RESULT:
@@ -468,7 +450,6 @@ def _pyproject_author_name(repo: Repository) -> RESULT:
 @define_rule(
     name="pyproject-omit-author-email",
     log_message="project.authors[0].email should be omitted for privacy",
-    issue_title="Remove project.authors email in pyproject.toml",
     level="warning",
 )
 def _pyproject_omit_author_email(repo: Repository) -> RESULT:
@@ -484,7 +465,6 @@ def _pyproject_omit_author_email(repo: Repository) -> RESULT:
 @define_rule(
     name="pyproject-readme",
     log_message="project.readme missing in pyproject.toml",
-    issue_title="Add project.readme to pyproject.toml",
     level="error",
 )
 def _pyproject_readme(repo: Repository) -> RESULT:
@@ -506,7 +486,6 @@ def _pyproject_requires_python(repo: Repository) -> str:
 @define_rule(
     name="missing-pyproject-requires-python",
     log_message="project.requires-python missing in pyproject.toml",
-    issue_title="Add project.requires-python to pyproject.toml",
     level="error",
 )
 def _missing_pyproject_requires_python(repo: Repository) -> RESULT:
@@ -538,7 +517,6 @@ def _pydep_has_lower_bound(dep: str) -> bool:
 @define_rule(
     name="pyproject-dependency-lower-bound",
     log_message="Dependencies should have lower bound",
-    issue_title="Add lower bound to pyproject.toml dependencies",
     level="error",
 )
 def _pyproject_dependency_lower_bound(repo: Repository) -> RESULT:
@@ -555,7 +533,6 @@ def _pyproject_dependency_lower_bound(repo: Repository) -> RESULT:
 @define_rule(
     name="pyproject-optional-dependencies-name",
     log_message="pyproject optional-dependencies should be named 'dev'",
-    issue_title="Use 'dev' for pyproject optional-dependencies",
     level="warning",
 )
 def _project_optional_dependencies_name(repo: Repository) -> RESULT:
@@ -586,7 +563,6 @@ def _ruff_extend_select(repo: Repository) -> list[str]:
 @define_rule(
     name="missing-pyproject-ruff-isort-rules",
     log_message="tool.ruff.lint.extend-select missing 'I' to enable isort rules",
-    issue_title="Add 'I' to tool.ruff.lint.extend-select",
     level="error",
 )
 def _missing_pyproject_ruff_isort_rules(repo: Repository) -> RESULT:
@@ -602,7 +578,6 @@ def _missing_pyproject_ruff_isort_rules(repo: Repository) -> RESULT:
 @define_rule(
     name="missing-pyproject-ruff-pyupgrade-rules",
     log_message="tool.ruff.lint.extend-select missing 'UP' to enable pyupgrade rules",
-    issue_title="Add 'UP' to tool.ruff.lint.extend-select",
     level="error",
 )
 def _missing_pyproject_ruff_pyupgrade_rules(repo: Repository) -> RESULT:
@@ -625,7 +600,6 @@ def _mypy_strict(repo: Repository) -> bool | None:
 @define_rule(
     name="mypy-strict-declared",
     log_message="mypy strict mode is not declared",
-    issue_title="Declare a mypy strict mode",
     level="error",
 )
 def _mypy_strict_declared(repo: Repository) -> RESULT:
@@ -641,7 +615,6 @@ def _mypy_strict_declared(repo: Repository) -> RESULT:
 @define_rule(
     name="mypy-strict",
     log_message="mypy strict mode is not enabled",
-    issue_title="Enable mypy strict mode",
     level="warning",
 )
 def _mypy_strict_enabled(repo: Repository) -> RESULT:
@@ -657,7 +630,6 @@ def _mypy_strict_enabled(repo: Repository) -> RESULT:
 @define_rule(
     name="requirements-txt-exact",
     log_message="Use exact versions in requirements.txt",
-    issue_title="Use exact versions in requirements.txt",
     level="error",
 )
 def _requirements_txt_exact(repo: Repository) -> RESULT:
@@ -671,7 +643,6 @@ def _requirements_txt_exact(repo: Repository) -> RESULT:
 @define_rule(
     name="requirements-txt-uv-compiled",
     log_message="requirements.txt is not compiled by uv",
-    issue_title="Compile requirements.txt with uv",
     level="warning",
 )
 def _requirements_txt_uv_compiled(repo: Repository) -> RESULT:
@@ -747,7 +718,6 @@ def _dependabot_update_schedule_intervals(repo: Repository) -> set[str]:
 @define_rule(
     name="delete-branch-on-merge",
     log_message="Repository should delete branches on merge",
-    issue_title="Enable delete branches on merge",
     level="error",
 )
 def _delete_branch_on_merge(repo: Repository) -> RESULT:
@@ -759,7 +729,6 @@ def _delete_branch_on_merge(repo: Repository) -> RESULT:
 @define_rule(
     name="allow-auto-merge",
     log_message="Repository should allow auto-merge",
-    issue_title="Enable allow auto-merge",
     level="warning",
 )
 def _auto_merge(repo: Repository) -> RESULT:
@@ -775,7 +744,6 @@ def _auto_merge(repo: Repository) -> RESULT:
 @define_rule(
     name="enable-merge-commit",
     log_message="Repository should allow merge commits",
-    issue_title="Enable merge commits",
     level="warning",
 )
 def _enable_merge_commit(repo: Repository) -> RESULT:
@@ -787,7 +755,6 @@ def _enable_merge_commit(repo: Repository) -> RESULT:
 @define_rule(
     name="disable-squash-merge",
     log_message="Repository should not allow squash merging",
-    issue_title="Disable squash merging",
     level="warning",
 )
 def _disable_squash_merge(repo: Repository) -> RESULT:
@@ -799,7 +766,6 @@ def _disable_squash_merge(repo: Repository) -> RESULT:
 @define_rule(
     name="disable-rebase-merge",
     log_message="Repository should not allow rebase merging",
-    issue_title="Disable rebase merging",
     level="warning",
 )
 def _disable_rebase_merge(repo: Repository) -> RESULT:
@@ -811,7 +777,6 @@ def _disable_rebase_merge(repo: Repository) -> RESULT:
 @define_rule(
     name="dependabot-schedule-monthly",
     log_message="Dependabot should be scheduled monthly",
-    issue_title="Schedule Dependabot monthly",
     level="warning",
 )
 def _dependabot_schedule_monthly(repo: Repository) -> RESULT:
@@ -825,7 +790,6 @@ def _dependabot_schedule_monthly(repo: Repository) -> RESULT:
 @define_rule(
     name="pip-dependabot",
     log_message="Dependabot should be enabled for pip ecosystem",
-    issue_title="Enable Dependabot for pip ecosystem",
     level="error",
 )
 def _pip_dependabot(repo: Repository) -> RESULT:
@@ -840,7 +804,6 @@ def _pip_dependabot(repo: Repository) -> RESULT:
 @define_rule(
     name="pip-dependabot-ignore-types",
     log_message="Dependabot should ignore types-* packages",
-    issue_title="Ignore types-* packages in Dependabot",
     level="warning",
 )
 def _dependabot_ignores_pip_types(repo: Repository) -> RESULT:
@@ -859,7 +822,6 @@ def _dependabot_ignores_pip_types(repo: Repository) -> RESULT:
 @define_rule(
     name="no-devcontainer",
     log_message="Avoid using devcontainers",
-    issue_title="Remove devcontainer",
     level="warning",
 )
 def _no_devcontainer(repo: Repository) -> RESULT:
@@ -871,7 +833,6 @@ def _no_devcontainer(repo: Repository) -> RESULT:
 @define_rule(
     name="allows-all-actions",
     log_message="Repository should allow all actions",
-    issue_title="Allow all actions and reusable workflows",
     level="warning",
 )
 def _actions_allowed_actions_all(repo: Repository) -> RESULT:
@@ -886,7 +847,6 @@ def _actions_allowed_actions_all(repo: Repository) -> RESULT:
 @define_rule(
     name="allow-workflow-write-permissions",
     log_message="Allow Actions read and write permissions",
-    issue_title="Allow Actions read and write permissions",
     level="warning",
 )
 def _allow_workflow_write_permissions(repo: Repository) -> RESULT:
@@ -903,7 +863,6 @@ def _allow_workflow_write_permissions(repo: Repository) -> RESULT:
 @define_rule(
     name="allow-actions-approve-prs",
     log_message="Allow Actions to approve pull request reviews",
-    issue_title="Allow Actions to approve pull request reviews",
     level="warning",
 )
 def _allow_actions_approve_prs(repo: Repository) -> RESULT:
@@ -1001,7 +960,6 @@ def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
 @define_rule(
     name="use-uv-pip",
     log_message="Use uv to install pip dependencies",
-    issue_title="Use uv to install pip dependencies",
     level="warning",
 )
 def _use_uv_pip(repo: Repository) -> RESULT:
@@ -1019,7 +977,6 @@ def _use_uv_pip(repo: Repository) -> RESULT:
 @define_rule(
     name="setup-uv",
     log_message="Use astral-sh/setup-uv",
-    issue_title="Use astral-sh/setup-uv",
     level="error",
 )
 def _setup_uv(repo: Repository) -> RESULT:
@@ -1033,7 +990,6 @@ def _setup_uv(repo: Repository) -> RESULT:
 @define_rule(
     name="uv-pip-install-with-requirements",
     log_message="Use uv pip install with requirements.txt",
-    issue_title="Use uv pip install with requirements.txt",
     level="error",
 )
 def _uv_pip_install_with_requirements(repo: Repository) -> RESULT:
@@ -1051,7 +1007,6 @@ def _uv_pip_install_with_requirements(repo: Repository) -> RESULT:
 @define_rule(
     name="setup-python-with-python-version-file",
     log_message="setup-python should use pyproject.toml",
-    issue_title="Use pyproject.toml with setup-python",
     level="error",
 )
 def _setup_python_with_python_version_file(repo: Repository) -> RESULT:
@@ -1069,7 +1024,6 @@ def _setup_python_with_python_version_file(repo: Repository) -> RESULT:
 @define_rule(
     name="disable-setup-python-cache",
     log_message="setup-python cache should be disabled when using uv",
-    issue_title="Disable setup-python cache",
     level="error",
 )
 def _disable_setup_python_cache(repo: Repository) -> RESULT:
@@ -1095,7 +1049,6 @@ def _job_uses_uv(job: dict[str, Any]) -> bool:
 @define_rule(
     name="missing-ruff",
     log_message="Missing GitHub Actions workflow for ruff linting",
-    issue_title="Add Lint workflow for ruff",
     level="error",
 )
 def _missing_ruff_error(repo: Repository) -> RESULT:
@@ -1112,7 +1065,6 @@ def _missing_ruff_error(repo: Repository) -> RESULT:
 @define_rule(
     name="missing-ruff",
     log_message="Missing GitHub Actions workflow for ruff linting",
-    issue_title="Add Lint workflow for ruff",
     level="warning",
 )
 def _missing_ruff_warning(repo: Repository) -> RESULT:
@@ -1129,7 +1081,6 @@ def _missing_ruff_warning(repo: Repository) -> RESULT:
 @define_rule(
     name="missing-mypy",
     log_message="Missing GitHub Actions workflow for mypy type checking",
-    issue_title="Add Lint workflow for mypy",
     level="error",
 )
 def _missing_mypy(repo: Repository) -> RESULT:
@@ -1146,7 +1097,6 @@ def _missing_mypy(repo: Repository) -> RESULT:
 @define_rule(
     name="missing-shfmt",
     log_message="Missing GitHub Actions workflow for shfmt linting",
-    issue_title="Add Lint workflow for shfmt",
     level="warning",
 )
 def _missing_shfmt(repo: Repository) -> RESULT:
@@ -1163,7 +1113,6 @@ def _missing_shfmt(repo: Repository) -> RESULT:
 @define_rule(
     name="missing-shellcheck",
     log_message="Missing GitHub Actions workflow for shellcheck linting",
-    issue_title="Add Lint workflow for shellcheck",
     level="warning",
 )
 def _missing_shellcheck(repo: Repository) -> RESULT:
@@ -1180,7 +1129,6 @@ def _missing_shellcheck(repo: Repository) -> RESULT:
 @define_rule(
     name="git-commit-name",
     log_message="Git commit name to github-actions",
-    issue_title="Change git commit name to github-actions",
     level="error",
 )
 def _git_commit_name(repo: Repository) -> RESULT:
@@ -1195,7 +1143,6 @@ def _git_commit_name(repo: Repository) -> RESULT:
 @define_rule(
     name="git-commit-email",
     log_message="Git commit email to github-actions",
-    issue_title="Change git commit email to github-actions",
     level="error",
 )
 def _git_commit_email(repo: Repository) -> RESULT:
@@ -1212,7 +1159,6 @@ def _git_commit_email(repo: Repository) -> RESULT:
 @define_rule(
     name="github-pat",
     log_message="Avoid using GitHub PAT in Actions",
-    issue_title="Remove GitHub PAT from Actions",
     level="warning",
 )
 def _github_pat(repo: Repository) -> RESULT:
@@ -1228,7 +1174,6 @@ def _github_pat(repo: Repository) -> RESULT:
 @define_rule(
     name="no-workflow-env-secrets",
     log_message="Do not expose secrets to entire workflow environment",
-    issue_title="Limit secrets to individual steps",
     level="warning",
 )
 def _no_workflow_env_secrets(repo: Repository) -> RESULT:
@@ -1244,7 +1189,6 @@ def _no_workflow_env_secrets(repo: Repository) -> RESULT:
 @define_rule(
     name="no-job-env-secrets",
     log_message="Do not expose secrets to entire job environment",
-    issue_title="Limit secrets to individual steps",
     level="warning",
 )
 def _no_job_env_secrets(repo: Repository) -> RESULT:
@@ -1259,7 +1203,6 @@ def _no_job_env_secrets(repo: Repository) -> RESULT:
 # @define_rule(
 #     name="wip-contents-write-permissions",
 #     log_message="Contents should not have write permissions",
-#     issue_title="Remove write permissions from contents",
 #     level="warning",
 # )
 # def _contents_write_permissions(repo: Repository) -> RESULT:
@@ -1279,7 +1222,6 @@ def _no_job_env_secrets(repo: Repository) -> RESULT:
 # @define_rule(
 #     name="wip-git-push",
 #     log_message="Should not git push in Actions",
-#     issue_title="Avoid git push in Actions",
 #     level="warning",
 # )
 # def _git_push(repo: Repository) -> RESULT:
@@ -1293,7 +1235,6 @@ def _no_job_env_secrets(repo: Repository) -> RESULT:
 @define_rule(
     name="wip-gh-pages-branch",
     log_message="Avoid using gh-pages branch",
-    issue_title="Avoid using gh-pages branch",
     level="warning",
 )
 def _gh_pages_branch(repo: Repository) -> RESULT:
@@ -1306,7 +1247,6 @@ def _gh_pages_branch(repo: Repository) -> RESULT:
 @define_rule(
     name="on-push-only",
     log_message="Don't trigger workflow on pull_request",
-    issue_title="Only trigger workflow on push",
     level="error",
 )
 def _on_push_only(repo: Repository) -> RESULT:
@@ -1325,7 +1265,6 @@ def _on_push_only(repo: Repository) -> RESULT:
 @define_rule(
     name="git-push-concurrency-group",
     log_message="Jobs that use git push must be in a concurrency group",
-    issue_title="Use concurrency group for jobs that use git push",
     level="error",
 )
 def _git_push_concurrency_group(repo: Repository) -> RESULT:
@@ -1349,7 +1288,6 @@ def _git_push_concurrency_group(repo: Repository) -> RESULT:
 @define_rule(
     name="git-push-if-commited",
     log_message="git push step should only run if changes are commited",
-    issue_title="Only run git push if changes are commited",
     level="error",
 )
 def _git_push_if_commited(repo: Repository) -> RESULT:
@@ -1363,7 +1301,6 @@ def _git_push_if_commited(repo: Repository) -> RESULT:
 @define_rule(
     name="dependabot-github-actions",
     log_message="Dependabot should be enabled for GitHub Actions if workflows are present",
-    issue_title="Enable Dependabot for GitHub Actions ecosystem",
     level="error",
 )
 def _github_actions_dependabot(repo: Repository) -> RESULT:
