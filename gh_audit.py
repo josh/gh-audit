@@ -863,6 +863,48 @@ def _actions_allowed_actions_all(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="allow-github-owned-actions",
+    log_message="Repository allow actions created by GitHub",
+    level="error",
+)
+def _actions_github_owned_allowed(repo: Repository) -> RESULT:
+    permissions = _get_actions_permissions(repo)
+    if permissions["enabled"] is False:
+        return SKIP
+    if permissions.get("allowed_actions") != "selected":
+        return SKIP
+    if not _workflow_step_uses(repo, re.compile("actions/")):
+        return SKIP
+
+    selected_actions = _get_repo_actions_selected_actions(repo)
+    if selected_actions["github_owned_allowed"]:
+        return OK
+    else:
+        return FAIL
+
+
+@define_rule(
+    name="allow-astral-owned-actions",
+    log_message="Repository allow actions created by astral-sh",
+    level="error",
+)
+def _actions_github_owned_allowed(repo: Repository) -> RESULT:
+    permissions = _get_actions_permissions(repo)
+    if permissions["enabled"] is False:
+        return SKIP
+    if permissions.get("allowed_actions") != "selected":
+        return SKIP
+    if not _workflow_step_uses(repo, re.compile("astral-sh/")):
+        return SKIP
+
+    selected_actions = _get_repo_actions_selected_actions(repo)
+    if "astral-sh/*" in selected_actions["patterns_allowed"]:
+        return OK
+    else:
+        return FAIL
+
+
+@define_rule(
     name="default-workflow-permissions",
     log_message="Actions should default to read permissions",
     level="error",
@@ -904,12 +946,26 @@ class RepositoryWorkflowPermissions(TypedDict):
     can_approve_pull_request_reviews: bool
 
 
+class RepositorySelectedActions(TypedDict):
+    github_owned_allowed: bool
+    verified_allowed: bool
+    patterns_allowed: list[str]
+
+
 @cache
 def _get_actions_permissions(repo: Repository) -> RepositoryActionPermissions:
     _, data = repo._requester.requestJsonAndCheck(
         "GET", f"{repo.url}/actions/permissions"
     )
     return cast(RepositoryActionPermissions, data)
+
+
+@cache
+def _get_repo_actions_selected_actions(repo: Repository) -> RepositorySelectedActions:
+    _, data = repo._requester.requestJsonAndCheck(
+        "GET", f"{repo.url}/actions/permissions/selected-actions"
+    )
+    return cast(RepositorySelectedActions, data)
 
 
 @cache
@@ -978,6 +1034,14 @@ def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
 def _any_job_defined(repo: Repository, job_name: str) -> bool:
     for name, _ in _iter_workflow_jobs(repo):
         if name == job_name:
+            return True
+    return False
+
+
+def _workflow_step_uses(repo: Repository, pattern: re.Pattern[str]) -> bool:
+    for step in _iter_workflow_steps(repo):
+        step_uses = step.get("uses", "")
+        if re.match(pattern, step_uses):
             return True
     return False
 
