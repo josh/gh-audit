@@ -845,17 +845,17 @@ def _actions_allowed_actions_all(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="allow-workflow-write-permissions",
-    log_message="Allow Actions read and write permissions",
-    level="warning",
+    name="default-workflow-permissions",
+    log_message="Actions should default to read permissions",
+    level="error",
 )
-def _allow_workflow_write_permissions(repo: Repository) -> RESULT:
+def _default_workflow_permissions(repo: Repository) -> RESULT:
     if repo.fork:
         return SKIP
     if not _get_actions_permissions(repo)["enabled"]:
         return SKIP
     permissions = _get_workflow_permissions(repo)
-    if permissions["default_workflow_permissions"] != "write":
+    if permissions["default_workflow_permissions"] == "write":
         return FAIL
     return OK
 
