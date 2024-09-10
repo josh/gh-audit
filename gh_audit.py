@@ -851,6 +851,8 @@ def _disable_actions(repo: Repository) -> RESULT:
     level="warning",
 )
 def _actions_allowed_actions_all(repo: Repository) -> RESULT:
+    if repo.visibility == "private":
+        return SKIP
     permissions = _get_actions_permissions(repo)
     if permissions["enabled"] is False:
         return SKIP
