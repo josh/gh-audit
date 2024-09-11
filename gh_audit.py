@@ -888,15 +888,10 @@ def _actions_github_owned_allowed(repo: Repository) -> RESULT:
         return OK
 
 
-@define_rule(
-    name="allow-astral-owned-actions",
-    log_message="Repository allow actions created by astral-sh",
-    level="error",
-)
-def _allow_astral_owned_actions(repo: Repository) -> RESULT:
-    if not _workflow_step_uses(repo, re.compile("astral-sh/")):
+def _allow_org_owned_actions(repo: Repository, trusted_org: str) -> RESULT:
+    org_pattern = re.compile(f"{trusted_org}/")
+    if not _workflow_step_uses(repo, org_pattern):
         return SKIP
-
     permissions = _get_actions_permissions(repo)
     if permissions["enabled"] is False:
         return SKIP
@@ -906,12 +901,30 @@ def _allow_astral_owned_actions(repo: Repository) -> RESULT:
         return FAIL
     elif permissions.get("allowed_actions") == "selected":
         selected_actions = _get_repo_actions_selected_actions(repo)
-        if "astral-sh/*" in selected_actions["patterns_allowed"]:
+        if f"{trusted_org}/*" in selected_actions["patterns_allowed"]:
             return OK
         else:
             return FAIL
     else:
         return OK
+
+
+@define_rule(
+    name="allow-astral-owned-actions",
+    log_message="Repository allow actions created by astral-sh",
+    level="error",
+)
+def _allow_astral_owned_actions(repo: Repository) -> RESULT:
+    return _allow_org_owned_actions(repo, "astral-sh")
+
+
+@define_rule(
+    name="allow-aws-owned-actions",
+    log_message="Repository allow actions created by aws-actions",
+    level="error",
+)
+def _allow_aws_owned_actions(repo: Repository) -> RESULT:
+    return _allow_org_owned_actions(repo, "aws-actions")
 
 
 @define_rule(
