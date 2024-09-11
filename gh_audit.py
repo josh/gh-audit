@@ -868,19 +868,24 @@ def _actions_allowed_actions_all(repo: Repository) -> RESULT:
     level="error",
 )
 def _actions_github_owned_allowed(repo: Repository) -> RESULT:
-    permissions = _get_actions_permissions(repo)
-    if permissions["enabled"] is False:
-        return SKIP
-    if permissions.get("allowed_actions") != "selected":
-        return SKIP
     if not _workflow_step_uses(repo, re.compile("actions/")):
         return SKIP
 
-    selected_actions = _get_repo_actions_selected_actions(repo)
-    if selected_actions["github_owned_allowed"]:
+    permissions = _get_actions_permissions(repo)
+    if permissions["enabled"] is False:
+        return SKIP
+    elif permissions.get("allowed_actions") == "all":
         return OK
-    else:
+    elif permissions.get("allowed_actions") == "local_only":
         return FAIL
+    elif permissions.get("allowed_actions") == "selected":
+        selected_actions = _get_repo_actions_selected_actions(repo)
+        if selected_actions["github_owned_allowed"]:
+            return OK
+        else:
+            return FAIL
+    else:
+        return OK
 
 
 @define_rule(
@@ -888,20 +893,25 @@ def _actions_github_owned_allowed(repo: Repository) -> RESULT:
     log_message="Repository allow actions created by astral-sh",
     level="error",
 )
-def _actions_github_owned_allowed(repo: Repository) -> RESULT:
-    permissions = _get_actions_permissions(repo)
-    if permissions["enabled"] is False:
-        return SKIP
-    if permissions.get("allowed_actions") != "selected":
-        return SKIP
+def _allow_astral_owned_actions(repo: Repository) -> RESULT:
     if not _workflow_step_uses(repo, re.compile("astral-sh/")):
         return SKIP
 
-    selected_actions = _get_repo_actions_selected_actions(repo)
-    if "astral-sh/*" in selected_actions["patterns_allowed"]:
+    permissions = _get_actions_permissions(repo)
+    if permissions["enabled"] is False:
+        return SKIP
+    elif permissions.get("allowed_actions") == "all":
         return OK
-    else:
+    elif permissions.get("allowed_actions") == "local_only":
         return FAIL
+    elif permissions.get("allowed_actions") == "selected":
+        selected_actions = _get_repo_actions_selected_actions(repo)
+        if "astral-sh/*" in selected_actions["patterns_allowed"]:
+            return OK
+        else:
+            return FAIL
+    else:
+        return OK
 
 
 @define_rule(
