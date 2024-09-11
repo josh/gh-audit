@@ -928,6 +928,33 @@ def _allow_aws_owned_actions(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="allow-docker-owned-actions",
+    log_message="Repository allow actions created by docker",
+    level="error",
+)
+def _allow_docker_owned_actions(repo: Repository) -> RESULT:
+    return _allow_org_owned_actions(repo, "docker")
+
+
+@define_rule(
+    name="allow-determinate-systems-owned-actions",
+    log_message="Repository allow actions created by DeterminateSystems",
+    level="error",
+)
+def _allow_determinate_systems_owned_actions(repo: Repository) -> RESULT:
+    return _allow_org_owned_actions(repo, "DeterminateSystems")
+
+
+@define_rule(
+    name="allow-cachix-owned-actions",
+    log_message="Repository allow actions created by cachix",
+    level="error",
+)
+def _allow_cachix_owned_actions(repo: Repository) -> RESULT:
+    return _allow_org_owned_actions(repo, "cachix")
+
+
+@define_rule(
     name="default-workflow-permissions",
     log_message="Actions should default to read permissions",
     level="error",
