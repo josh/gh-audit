@@ -1280,21 +1280,34 @@ def _get_repo_rulesets(
     return cast(list[RepositoryRuleset], data)
 
 
+def _required_status_check(repo: Repository, job_name: str) -> RESULT:
+    if not _any_job_defined(repo, job_name):
+        return SKIP
+
+    for ruleset in _get_repo_rulesets(repo):
+        if ruleset["type"] == "required_status_checks":
+            for check in ruleset["parameters"]["required_status_checks"]:
+                if check["context"] == job_name:
+                    return OK
+    return FAIL
+
+
+@define_rule(
+    name="required-test-status-check",
+    log_message="Add Ruleset to require 'test' status check",
+    level="warning",
+)
+def _required_test_status_check(repo: Repository) -> RESULT:
+    return _required_status_check(repo, "test")
+
+
 @define_rule(
     name="required-ruff-status-check",
     log_message="Add Ruleset to require 'ruff' status check",
     level="warning",
 )
 def _required_ruff_status_check(repo: Repository) -> RESULT:
-    if not _any_job_defined(repo, "ruff"):
-        return SKIP
-
-    for ruleset in _get_repo_rulesets(repo):
-        if ruleset["type"] == "required_status_checks":
-            for check in ruleset["parameters"]["required_status_checks"]:
-                if check["context"] == "ruff":
-                    return OK
-    return FAIL
+    return _required_status_check(repo, "ruff")
 
 
 @define_rule(
@@ -1314,6 +1327,15 @@ def _missing_mypy(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="required-mypy-status-check",
+    log_message="Add Ruleset to require 'mypy' status check",
+    level="warning",
+)
+def _required_mypy_status_check(repo: Repository) -> RESULT:
+    return _required_status_check(repo, "mypy")
+
+
+@define_rule(
     name="missing-shfmt",
     log_message="Missing GitHub Actions workflow for shfmt linting",
     level="warning",
@@ -1330,6 +1352,15 @@ def _missing_shfmt(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="required-shfmt-status-check",
+    log_message="Add Ruleset to require 'shfmt' status check",
+    level="warning",
+)
+def _required_shfmt_status_check(repo: Repository) -> RESULT:
+    return _required_status_check(repo, "shfmt")
+
+
+@define_rule(
     name="missing-shellcheck",
     log_message="Missing GitHub Actions workflow for shellcheck linting",
     level="warning",
@@ -1343,6 +1374,15 @@ def _missing_shellcheck(repo: Repository) -> RESULT:
             return OK
 
     return FAIL
+
+
+@define_rule(
+    name="required-shellcheck-status-check",
+    log_message="Add Ruleset to require 'shellcheck' status check",
+    level="warning",
+)
+def _required_shellcheck_status_check(repo: Repository) -> RESULT:
+    return _required_status_check(repo, "shellcheck")
 
 
 @define_rule(
