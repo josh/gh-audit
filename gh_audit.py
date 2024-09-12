@@ -154,6 +154,37 @@ def define_rule(**kwargs: Any) -> Callable[[Callable[[Repository], RESULT]], Non
     return _inner_define_rule
 
 
+WorkflowStep = TypedDict(
+    "WorkflowStep",
+    {
+        "name": NotRequired[str],
+        "uses": NotRequired[str],
+        "run": NotRequired[str],
+        "with": NotRequired[dict[str, str]],
+        "env": NotRequired[dict[str, str]],
+    },
+)
+
+WorkflowJob = TypedDict(
+    "WorkflowJob",
+    {
+        "runs-on": str,
+        "env": NotRequired[dict[str, str]],
+        "permissions": NotRequired[dict[str, str]],
+        "steps": list[WorkflowStep],
+    },
+)
+
+
+class Workflow(TypedDict):
+    name: str
+    on: str | list[str] | dict[str, Any]
+    permissions: NotRequired[dict[str, str]]
+    concurrency: NotRequired[Any]
+    env: NotRequired[dict[str, str]]
+    jobs: dict[str, WorkflowJob]
+
+
 @define_rule(
     name="missing-description",
     log_message="Missing repository description",
@@ -1028,23 +1059,29 @@ def _get_workflow_permissions(repo: Repository) -> RepositoryWorkflowPermissions
 
 # TODO: Deprecate this util
 @cache
-def _get_workflow(repo: Repository, name: str) -> dict[str, Any]:
+def _get_workflow(repo: Repository, name: str) -> Workflow:
     return _get_workflow_by_path(repo, Path(f".github/workflows/{name}.yml"))
 
 
 @cache
-def _get_workflow_by_path(repo: Repository, path: Path) -> dict[str, Any]:
+def _get_workflow_by_path(repo: Repository, path: Path) -> Workflow:
     assert str(path).startswith(".github/workflows/"), path
     contents = _get_contents(repo, path=str(path))
+    empty_workflow: Workflow = {
+        "name": "",
+        "on": "",
+        "jobs": {},
+    }
     if not contents:
-        return dict()
+        return empty_workflow
     try:
-        return cast(
-            dict[str, Any],
-            yaml.safe_load(contents.decoded_content.decode("utf-8")),
-        )
+        workflow = yaml.safe_load(contents.decoded_content.decode("utf-8"))
+        # Workaround stupid YAML parsing bug
+        if True in workflow:
+            workflow["on"] = workflow.pop(True)
+        return cast(Workflow, workflow)
     except yaml.YAMLError:
-        return dict()
+        return empty_workflow
 
 
 @cache
@@ -1061,13 +1098,13 @@ def _get_workflow_paths(repo: Repository) -> list[Path]:
     return paths
 
 
-def _iter_workflow_jobs(repo: Repository) -> Iterator[tuple[str, dict[str, Any]]]:
+def _iter_workflow_jobs(repo: Repository) -> Iterator[tuple[str, WorkflowJob]]:
     for path in _get_workflow_paths(repo):
         workflow = _get_workflow_by_path(repo, path)
         yield from workflow.get("jobs", {}).items()
 
 
-def _iter_workflow_steps(repo: Repository) -> Iterator[dict[str, Any]]:
+def _iter_workflow_steps(repo: Repository) -> Iterator[WorkflowStep]:
     for path in _get_workflow_paths(repo):
         workflow = _get_workflow_by_path(repo, path)
         for job in workflow.get("jobs", {}).values():
@@ -1178,7 +1215,7 @@ def _disable_setup_python_cache(repo: Repository) -> RESULT:
     return OK
 
 
-def _job_uses_uv(job: dict[str, Any]) -> bool:
+def _job_uses_uv(job: WorkflowJob) -> bool:
     for step in job.get("steps", []):
         if re.search("uv ", step.get("run", "")):
             return True
@@ -1382,38 +1419,6 @@ def _no_job_env_secrets(repo: Repository) -> RESULT:
     return OK
 
 
-# @define_rule(
-#     name="wip-contents-write-permissions",
-#     log_message="Contents should not have write permissions",
-#     level="warning",
-# )
-# def _contents_write_permissions(repo: Repository) -> RESULT:
-#     for path in _get_workflow_paths(repo):
-#         workflow = _get_workflow_by_path(repo, path)
-#
-#         if workflow.get("permissions", {}).get("contents", "") == "write":
-#             return FAIL
-#
-#         for job in workflow.get("jobs", {}).values():
-#             if job.get("permissions", {}).get("contents", "") == "write":
-#                 return FAIL
-#
-#     return OK
-
-
-# @define_rule(
-#     name="wip-git-push",
-#     log_message="Should not git push in Actions",
-#     level="warning",
-# )
-# def _git_push(repo: Repository) -> RESULT:
-#     for step in _iter_workflow_steps(repo):
-#         run = step.get("run", "")
-#         if re.search("git push", run):
-#             return FAIL
-#     return OK
-
-
 @define_rule(
     name="wip-gh-pages-branch",
     log_message="Avoid using gh-pages branch",
@@ -1434,7 +1439,7 @@ def _gh_pages_branch(repo: Repository) -> RESULT:
 def _on_push_only(repo: Repository) -> RESULT:
     for path in _get_workflow_paths(repo):
         workflow = _get_workflow_by_path(repo, path)
-        on: str | list[str] | dict[str, Any] = cast(Any, workflow).get(True, {})
+        on: str | list[str] | dict[str, Any] = cast(Any, workflow).get("on", {})
         if on == "pull_request":
             return FAIL
         if isinstance(on, list) and "pull_request" in on:
@@ -1478,6 +1483,43 @@ def _git_push_if_commited(repo: Repository) -> RESULT:
         if re.search("git push", run) and "if" not in step:
             return FAIL
     return OK
+
+
+@define_rule(
+    name="enable-write-contents-permission",
+    log_message="Workflows using git push must have contents write permission",
+    level="error",
+)
+def _enable_write_contents_permission(repo: Repository) -> RESULT:
+    if not _get_actions_permissions(repo)["enabled"]:
+        return SKIP
+
+    for path in _get_workflow_paths(repo):
+        workflow = _get_workflow_by_path(repo, path)
+        workflow_has_write_permission = (
+            workflow.get("permissions", {}).get("contents") == "write"
+        )
+
+        for job in workflow.get("jobs", {}).values():
+            job_has_write_permission = (
+                job.get("permissions", {}).get("contents") == "write"
+            )
+            has_write_permission = (
+                job_has_write_permission or workflow_has_write_permission
+            )
+            uses_git_push = _workflow_job_uses_git_push(job)
+            if uses_git_push and not has_write_permission:
+                return FAIL
+
+    return OK
+
+
+def _workflow_job_uses_git_push(job: WorkflowJob) -> bool:
+    for step in job.get("steps", []):
+        step_run = step.get("run", "")
+        if re.search("git push", step_run):
+            return True
+    return False
 
 
 @define_rule(
