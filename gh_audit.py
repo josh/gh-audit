@@ -773,6 +773,21 @@ def _auto_merge(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="dependabot-auto-merge",
+    log_message="Set up Dependabot auto-merge",
+    level="error",
+)
+def _dependabot_auto_merge(repo: Repository) -> RESULT:
+    if repo.fork:
+        return SKIP
+    if not _dependabot_config(repo):
+        return SKIP
+    if not _get_contents(repo, path=".github/workflows/merge.yml"):
+        return FAIL
+    return OK
+
+
+@define_rule(
     name="enable-merge-commit",
     log_message="Repository should allow merge commits",
     level="warning",
