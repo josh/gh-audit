@@ -959,6 +959,15 @@ def _allow_aws_owned_actions(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="allow-dependabot-owned-actions",
+    log_message="Repository allow actions created by dependabot",
+    level="error",
+)
+def _allow_dependabot_owned_actions(repo: Repository) -> RESULT:
+    return _allow_org_owned_actions(repo, "dependabot")
+
+
+@define_rule(
     name="allow-docker-owned-actions",
     log_message="Repository allow actions created by docker",
     level="error",
