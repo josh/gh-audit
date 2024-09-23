@@ -1,3 +1,7 @@
-__pycache__/
-.venv/
 *.egg-info/
+.devenv*
+.direnv/
+.pre-commit-config.yaml
+.venv/
+__pycache__/
+devenv.local.nix
