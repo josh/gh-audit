@@ -1311,7 +1311,9 @@ def _required_status_check(repo: Repository, job_name: str) -> RESULT:
     for ruleset in _get_repo_rulesets(repo):
         if ruleset["type"] == "required_status_checks":
             for check in ruleset["parameters"]["required_status_checks"]:
-                if check["context"] == job_name:
+                if check["context"] == job_name or check["context"].startswith(
+                    f"{job_name} "
+                ):
                     return OK
     return FAIL
 
