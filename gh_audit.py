@@ -104,7 +104,7 @@ def main(
             for repo in user.get_repos():
                 if repo.owner.login != user.login:
                     continue
-                if repo.archived:
+                if repo.archived or repo.fork:
                     continue
                 for rule in rules:
                     rule(repo=repo)
