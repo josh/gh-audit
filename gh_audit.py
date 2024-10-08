@@ -579,6 +579,22 @@ def _project_optional_dependencies_name(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="pyproject-depends-on-requests",
+    log_message="Avoid requests dependency",
+    level="warning",
+)
+def _pyproject_depends_on_requests(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
+    for dep in _pyproject_all_dependencies(repo):
+        if dep.startswith("requests"):
+            return FAIL
+    return OK
+
+
 @cache
 def _ruff_extend_select(repo: Repository) -> list[str]:
     return cast(
