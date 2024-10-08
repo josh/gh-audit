@@ -837,14 +837,14 @@ def _disable_rebase_merge(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="dependabot-schedule-monthly",
-    log_message="Dependabot should be scheduled monthly",
+    name="dependabot-schedule-weekly",
+    log_message="Dependabot should be scheduled weekly",
     level="warning",
 )
-def _dependabot_schedule_monthly(repo: Repository) -> RESULT:
+def _dependabot_schedule_weekly(repo: Repository) -> RESULT:
     if not _dependabot_config(repo):
         return SKIP
-    if _dependabot_update_schedule_intervals(repo) != {"monthly"}:
+    if _dependabot_update_schedule_intervals(repo) != {"weekly"}:
         return FAIL
     return OK
 
