@@ -741,6 +741,16 @@ def _requirements_txt_has_types(repo: Repository) -> bool:
 
 
 @cache
+def _requirements_txt_has_ruff(repo: Repository) -> bool:
+    if text := _requirements_txt(repo):
+        for line in text.splitlines():
+            if line.lstrip().startswith("#"):
+                continue
+            if "ruff==" in line:
+                return True
+    return False
+
+@cache
 def _dependabot_config(repo: Repository) -> dict[str, Any]:
     logger.debug("Loading .github/dependabot.yml for %s", repo.full_name)
     contents = _get_contents(repo, path=".github/dependabot.yml")
@@ -883,6 +893,25 @@ def _dependabot_ignores_pip_types(repo: Repository) -> RESULT:
 
     return FAIL
 
+@define_rule(
+    name="pip-dependabot-ignore-ruff-patches",
+    log_message="Dependabot should ignore ruff patches",
+    level="warning",
+)
+def _dependabot_ignores_ruff_patches(repo: Repository) -> RESULT:
+    if not _has_requirements_txt(repo):
+        return SKIP
+
+    if not _requirements_txt_has_ruff(repo):
+        return SKIP
+
+    for update in _dependabot_config(repo).get("updates", []):
+        if update.get("package-ecosystem") == "pip":
+            for ignored in update.get("ignore", []):
+                if ignored.get("dependency-name") == "ruff":
+                    return OK
+
+    return FAIL
 
 @define_rule(
     name="no-devcontainer",
