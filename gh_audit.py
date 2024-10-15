@@ -872,6 +872,9 @@ def _dependabot_ignores_pip_types(repo: Repository) -> RESULT:
     if not _has_requirements_txt(repo):
         return SKIP
 
+    if not _requirements_txt_has_types(repo):
+        return SKIP
+
     for update in _dependabot_config(repo).get("updates", []):
         if update.get("package-ecosystem") == "pip":
             for ignored in update.get("ignore", []):
