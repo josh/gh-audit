@@ -750,6 +750,7 @@ def _requirements_txt_has_ruff(repo: Repository) -> bool:
                 return True
     return False
 
+
 @cache
 def _dependabot_config(repo: Repository) -> dict[str, Any]:
     logger.debug("Loading .github/dependabot.yml for %s", repo.full_name)
@@ -893,6 +894,7 @@ def _dependabot_ignores_pip_types(repo: Repository) -> RESULT:
 
     return FAIL
 
+
 @define_rule(
     name="pip-dependabot-ignore-ruff-patches",
     log_message="Dependabot should ignore ruff patches",
@@ -912,6 +914,7 @@ def _dependabot_ignores_ruff_patches(repo: Repository) -> RESULT:
                     return OK
 
     return FAIL
+
 
 @define_rule(
     name="no-devcontainer",
