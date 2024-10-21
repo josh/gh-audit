@@ -4,6 +4,7 @@ import subprocess
 import tomllib
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from functools import cache
 from pathlib import Path
 from typing import Any, Final, Literal, NotRequired, TypedDict, cast
@@ -1641,6 +1642,57 @@ def _has_workflow_files(repo: Repository) -> bool:
         if str(path).startswith(".github/workflows/"):
             return True
     return False
+
+
+@define_rule(
+    name="tag-stable-projects",
+    log_message="Tag latest repository release",
+    level="warning",
+)
+def _tag_stable_projects(repo: Repository) -> RESULT:
+    if repo.private:
+        return SKIP
+
+    if _repository_is_new(repo):
+        return SKIP
+
+    if _repository_has_recent_changes(repo):
+        return SKIP
+
+    if _repository_has_changes_since_released(repo):
+        return FAIL
+
+    return OK
+
+
+@cache
+def _repository_has_recent_changes(repo: Repository) -> bool:
+    since = datetime.now(tz=UTC) - timedelta(days=90)
+    for commit in repo.get_commits(since=since, author=repo.owner):
+        if len(commit.parents) > 1:
+            continue
+        return True
+    return False
+
+
+@cache
+def _repository_has_changes_since_released(repo: Repository) -> bool:
+    try:
+        release = repo.get_latest_release()
+    except GithubException:
+        return True
+
+    for commit in repo.get_commits(since=release.created_at, author=repo.owner):
+        if len(commit.parents) > 1:
+            continue
+        return True
+
+    return False
+
+
+@cache
+def _repository_is_new(repo: Repository) -> bool:
+    return repo.created_at > datetime.now(tz=UTC) - timedelta(days=90)
 
 
 if __name__ == "__main__":
