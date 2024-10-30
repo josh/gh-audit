@@ -918,17 +918,6 @@ def _dependabot_ignores_ruff_patches(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="no-devcontainer",
-    log_message="Avoid using devcontainers",
-    level="warning",
-)
-def _no_devcontainer(repo: Repository) -> RESULT:
-    if _get_contents(repo, path=".devcontainer/devcontainer.json"):
-        return FAIL
-    return OK
-
-
-@define_rule(
     name="disable-actions",
     log_message="Repository without workflows should disable Actions",
     level="error",
