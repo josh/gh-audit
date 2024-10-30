@@ -1684,5 +1684,20 @@ def _repository_is_new(repo: Repository) -> bool:
     return repo.created_at > datetime.now(tz=UTC) - timedelta(days=90)
 
 
+@define_rule(
+    name="renovate-nix",
+    log_message="Configure Renovate for Nix updates",
+    level="error",
+)
+def _renovate_nix(repo: Repository) -> RESULT:
+    if not _get_contents(repo, path="flake.nix"):
+        return SKIP
+
+    if not _get_contents(repo, path=".github/renovate.json"):
+        return FAIL
+
+    return OK
+
+
 if __name__ == "__main__":
     main()
