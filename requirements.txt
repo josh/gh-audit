@@ -44,5 +44,5 @@ urllib3==2.2.3
     # via
     #   pygithub
     #   requests
-wrapt==1.16.0
+wrapt==1.17.0
     # via deprecated
