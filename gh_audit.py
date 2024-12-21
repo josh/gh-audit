@@ -1402,6 +1402,15 @@ def _required_mypy_status_check(repo: Repository) -> RESULT:
     return _required_status_check(repo, "mypy")
 
 
+@cache
+def _treefmt_nix_configured(repo: Repository) -> bool:
+    if _get_contents(repo, path="treefmt.nix"):
+        return True
+    if _get_contents(repo, path="internal/treefmt.nix"):
+        return True
+    return False
+
+
 @define_rule(
     name="missing-shfmt",
     log_message="Missing GitHub Actions workflow for shfmt linting",
@@ -1414,6 +1423,9 @@ def _missing_shfmt(repo: Repository) -> RESULT:
     for step in _iter_workflow_steps(repo):
         if re.search("shfmt ", step.get("run", "")):
             return OK
+
+    if _treefmt_nix_configured(repo):
+        return OK
 
     return FAIL
 
@@ -1439,6 +1451,9 @@ def _missing_shellcheck(repo: Repository) -> RESULT:
     for step in _iter_workflow_steps(repo):
         if re.search("shellcheck ", step.get("run", "")):
             return OK
+
+    if _treefmt_nix_configured(repo):
+        return OK
 
     return FAIL
 
