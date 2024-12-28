@@ -6,7 +6,7 @@ cffi==1.17.1
     # via
     #   cryptography
     #   pynacl
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via gh-audit (pyproject.toml)
@@ -32,9 +32,9 @@ pyyaml==6.0.2
     # via gh-audit (pyproject.toml)
 requests==2.32.3
     # via pygithub
-ruff==0.8.0
+ruff==0.8.4
     # via gh-audit (pyproject.toml)
-types-pyyaml==6.0.12.20240311
+types-pyyaml==6.0.12.20241221
     # via gh-audit (pyproject.toml)
 typing-extensions==4.12.2
     # via
