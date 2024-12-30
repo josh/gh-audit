@@ -1778,7 +1778,14 @@ def _renovate_nix(repo: Repository) -> RESULT:
     return OK
 
 
-_QUICK_JOBS = ["lint", "merge", "mypy"]
+_QUICK_JOBS = [
+    "lint",
+    "merge",
+    "mypy",
+    "ruff",
+    "shellcheck",
+    "shfmt",
+]
 
 
 @define_rule(
