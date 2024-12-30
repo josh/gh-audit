@@ -172,6 +172,7 @@ WorkflowJob = TypedDict(
         "runs-on": str,
         "env": NotRequired[dict[str, str]],
         "permissions": NotRequired[dict[str, str]],
+        "timeout-minutes": NotRequired[int],
         "steps": list[WorkflowStep],
     },
 )
@@ -1742,6 +1743,28 @@ def _renovate_nix(repo: Repository) -> RESULT:
 
     if not _get_contents(repo, path=".github/renovate.json"):
         return FAIL
+
+    return OK
+
+
+_QUICK_JOBS = ["lint", "merge", "mypy"]
+
+
+@define_rule(
+    name="workflow-timeout",
+    log_message="Private workflow missing timeout",
+    level="warning",
+)
+def _workflow_missing_timeout(repo: Repository) -> RESULT:
+    if not repo.private:
+        return SKIP
+
+    for name, job in _iter_workflow_jobs(repo):
+        if name in _QUICK_JOBS:
+            continue
+        if "timeout-minutes" not in job:
+            return FAIL
+
 
     return OK
 
