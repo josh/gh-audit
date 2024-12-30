@@ -1765,7 +1765,6 @@ def _workflow_missing_timeout(repo: Repository) -> RESULT:
         if "timeout-minutes" not in job:
             return FAIL
 
-
     return OK
 
 
