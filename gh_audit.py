@@ -1575,7 +1575,12 @@ def _repo_gh_pages_source(repo: Repository) -> str | None:
     if not repo.has_pages:
         return None
     _, data = repo._requester.requestJsonAndCheck("GET", f"{repo.url}/pages")
-    return data.get("source", {}).get("branch", "") or "gh-pages"
+
+    branch_name = data.get("source", {}).get("branch", "") or "gh-pages"
+    for branch in repo.get_branches():
+        if branch.name == branch_name:
+            return branch_name
+    return None
 
 
 @define_rule(
