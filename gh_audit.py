@@ -1319,6 +1319,19 @@ def _missing_ruff_warning(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="use-cachix-action",
+    log_message="Use cachix/cachix-action instead of DeterminateSystems/magic-nix-cache-action",
+    level="warning",
+)
+def _use_cachix_action(repo: Repository) -> RESULT:
+    for step in _iter_workflow_steps(repo):
+        step_uses = step.get("uses", "")
+        if "DeterminateSystems/magic-nix-cache-action" in step_uses:
+            return FAIL
+    return OK
+
+
 class RepositoryRulesetRequiredStatusCheck(TypedDict):
     context: str
 
