@@ -1364,7 +1364,7 @@ def _required_status_check(repo: Repository, job_name: str) -> RESULT:
     log_message="Add Ruleset to require some status check",
     level="error",
 )
-def _required_status_check(repo: Repository) -> RESULT:
+def _require_some_status_check(repo: Repository) -> RESULT:
     if not repo.allow_auto_merge:
         return SKIP
 
