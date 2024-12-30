@@ -1531,21 +1531,6 @@ def _git_commit_email(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="github-pat",
-    log_message="Avoid using GitHub PAT in Actions",
-    level="warning",
-)
-def _github_pat(repo: Repository) -> RESULT:
-    for step in _iter_workflow_steps(repo):
-        env: dict[str, str] = step.get("env", {})
-        for name, value in env.items():
-            if value == "${{ secrets.GH_TOKEN }}":
-                return FAIL
-
-    return OK
-
-
-@define_rule(
     name="no-workflow-env-secrets",
     log_message="Do not expose secrets to entire workflow environment",
     level="warning",
@@ -1580,10 +1565,17 @@ def _no_job_env_secrets(repo: Repository) -> RESULT:
     level="warning",
 )
 def _gh_pages_branch(repo: Repository) -> RESULT:
-    for branch in repo.get_branches():
-        if branch.name == "gh-pages":
-            return FAIL
+    if _repo_gh_pages_source(repo) == "gh-pages":
+        return FAIL
     return OK
+
+
+@cache
+def _repo_gh_pages_source(repo: Repository) -> str | None:
+    if not repo.has_pages:
+        return None
+    _, data = repo._requester.requestJsonAndCheck("GET", f"{repo.url}/pages")
+    return data.get("source", {}).get("branch", "") or "gh-pages"
 
 
 @define_rule(
@@ -1657,6 +1649,45 @@ def _workflow_job_uses_git_push(job: WorkflowJob) -> bool:
         if re.search("git push", step_run):
             return True
     return False
+
+
+def _workflow_job_git_push_branch(job: WorkflowJob, branch: str) -> bool:
+    for step in job.get("steps", []):
+        step_run = step.get("run", "")
+        if re.search("git push", step_run) and re.search(branch, step_run):
+            return True
+    return False
+
+
+def _workflow_job_checkout_uses_token(job: WorkflowJob) -> bool:
+    for step in job.get("steps", []):
+        step_uses = step.get("uses", "")
+        step_with = step.get("with", {})
+        if step_uses.startswith("actions/checkout") and step_with.get("token"):
+            return True
+    return False
+
+
+@define_rule(
+    name="git-push-pat",
+    log_message="Use PAT when git pushing",
+    level="warning",
+)
+def _github_push_pat(repo: Repository) -> RESULT:
+    for job_name, job in _iter_workflow_jobs(repo):
+        if _workflow_job_checkout_uses_token(job):
+            continue
+        if not _workflow_job_uses_git_push(job):
+            continue
+
+        # Ignore gh-pages pushes
+        gh_pages_branch = _repo_gh_pages_source(repo)
+        if gh_pages_branch and _workflow_job_git_push_branch(job, gh_pages_branch):
+            continue
+
+        return FAIL
+
+    return OK
 
 
 @define_rule(
