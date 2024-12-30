@@ -1360,6 +1360,25 @@ def _required_status_check(repo: Repository, job_name: str) -> RESULT:
 
 
 @define_rule(
+    name="required-status-check",
+    log_message="Add Ruleset to require some status check",
+    level="error",
+)
+def _required_status_check(repo: Repository) -> RESULT:
+    if not repo.allow_auto_merge:
+        return SKIP
+
+    if not _get_contents(repo, path=".github/workflows/merge.yml"):
+        return SKIP
+
+    rulesets = _get_repo_rulesets(repo)
+    for ruleset in rulesets:
+        if ruleset["type"] == "required_status_checks":
+            return OK
+    return FAIL
+
+
+@define_rule(
     name="required-test-status-check",
     log_message="Add Ruleset to require 'test' status check",
     level="warning",
