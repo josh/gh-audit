@@ -804,7 +804,7 @@ def _auto_merge(repo: Repository) -> RESULT:
 @define_rule(
     name="dependabot-auto-merge",
     log_message="Set up Dependabot auto-merge",
-    level="error",
+    level="warning",
 )
 def _dependabot_auto_merge(repo: Repository) -> RESULT:
     if repo.fork:
