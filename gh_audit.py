@@ -1811,5 +1811,22 @@ def _workflow_missing_timeout(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="runner-os",
+    log_message="Lock GitHub Actions runner to a specific version",
+    level="warning",
+)
+def _runner_os(repo: Repository) -> RESULT:
+    if not _get_contents(repo, path=".github/renovate.json"):
+        return SKIP
+
+    for _, job in _iter_workflow_jobs(repo):
+        runs_on = job.get("runs-on", "")
+        if runs_on == "ubuntu-latest":
+            return FAIL
+
+    return OK
+
+
 if __name__ == "__main__":
     main()
