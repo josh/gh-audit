@@ -166,10 +166,21 @@ WorkflowStep = TypedDict(
     },
 )
 
+
+class WorkflowMatrixConfiguration(TypedDict):
+    include: NotRequired[list[str]]
+    exclude: NotRequired[list[str]]
+
+
+class WorkflowStrategy(TypedDict):
+    matrix: dict[str, list[str]] | WorkflowMatrixConfiguration
+
+
 WorkflowJob = TypedDict(
     "WorkflowJob",
     {
         "runs-on": str,
+        "strategy": NotRequired[WorkflowStrategy],
         "env": NotRequired[dict[str, str]],
         "permissions": NotRequired[dict[str, str]],
         "timeout-minutes": NotRequired[int],
@@ -1817,13 +1828,16 @@ def _workflow_missing_timeout(repo: Repository) -> RESULT:
     level="warning",
 )
 def _runner_os(repo: Repository) -> RESULT:
-    if not _get_contents(repo, path=".github/renovate.json"):
-        return SKIP
-
     for _, job in _iter_workflow_jobs(repo):
         runs_on = job.get("runs-on", "")
-        if runs_on == "ubuntu-latest":
+        if "-latest" in runs_on:
             return FAIL
+
+        matrix = job.get("strategy", {}).get("matrix", {})
+        for vs in matrix.values():
+            for v in vs:
+                if isinstance(v, str) and v.endswith("-latest"):
+                    return FAIL
 
     return OK
 
