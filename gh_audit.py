@@ -1825,7 +1825,7 @@ def _workflow_missing_timeout(repo: Repository) -> RESULT:
 @define_rule(
     name="runner-os",
     log_message="Lock GitHub Actions runner to a specific version",
-    level="warning",
+    level="error",
 )
 def _runner_os(repo: Repository) -> RESULT:
     for _, job in _iter_workflow_jobs(repo):
@@ -1839,6 +1839,39 @@ def _runner_os(repo: Repository) -> RESULT:
             for v in vs:
                 if isinstance(v, str) and v.endswith("-latest"):
                     return FAIL
+
+    return OK
+
+
+_OUTDATED_RUNNER_IMAGES = [
+    "ubuntu-22.04",
+    "ubuntu-20.04",
+    "macos-13",
+    "macos-12",
+]
+
+
+@define_rule(
+    name="runner-os-outdated",
+    log_message="Use latest runner image",
+    level="warning",
+)
+def _runner_os_outdated(repo: Repository) -> RESULT:
+    for _, job in _iter_workflow_jobs(repo):
+        runs_on = job.get("runs-on", "")
+        for os in _OUTDATED_RUNNER_IMAGES:
+            if os in runs_on:
+                return FAIL
+
+        matrix = job.get("strategy", {}).get("matrix", {})
+        for vs in matrix.values():
+            assert isinstance(vs, list)
+            for v in vs:
+                if not isinstance(v, str):
+                    continue
+                for os in _OUTDATED_RUNNER_IMAGES:
+                    if os in v:
+                        return FAIL
 
     return OK
 
