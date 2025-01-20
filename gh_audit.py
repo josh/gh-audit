@@ -1835,6 +1835,7 @@ def _runner_os(repo: Repository) -> RESULT:
 
         matrix = job.get("strategy", {}).get("matrix", {})
         for vs in matrix.values():
+            assert isinstance(vs, list)
             for v in vs:
                 if isinstance(v, str) and v.endswith("-latest"):
                     return FAIL
