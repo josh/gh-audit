@@ -1876,5 +1876,21 @@ def _runner_os_outdated(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="arm64-qemu",
+    log_message="Use native ARM64 runner instead of QEMU",
+    level="error",
+)
+def _arm64_qemu(repo: Repository) -> RESULT:
+    for step in _iter_workflow_steps(repo):
+        step_uses = step.get("uses", "")
+        step_platforms = step.get("with", {}).get("platforms", "")
+        if step_uses.startswith("docker/setup-qemu-action"):
+            if "arm64" in step_platforms:
+                return FAIL
+
+    return OK
+
+
 if __name__ == "__main__":
     main()
