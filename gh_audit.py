@@ -1499,6 +1499,15 @@ def _required_shellcheck_status_check(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="required-lockfile-drv-changed-status-check",
+    log_message="Add Ruleset to require 'lockfile-drv-changed' status check",
+    level="error",
+)
+def _required_lockfile_drv_changed_status_check(repo: Repository) -> RESULT:
+    return _required_status_check(repo, "lockfile-drv-changed")
+
+
+@define_rule(
     name="git-commit-name",
     log_message="Git commit name to github-actions",
     level="error",
