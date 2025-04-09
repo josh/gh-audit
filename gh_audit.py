@@ -1498,7 +1498,7 @@ def _git_commit_name(repo: Repository) -> RESULT:
     for step in _iter_workflow_steps(repo):
         run = step.get("run", "")
         if re.search("git config", run) and re.search("user.name", run):
-            if not re.search("github-actions\\[bot\\]", run):
+            if not re.search("github-actions\\[bot\\]|outputs\\.app-slug", run):
                 return FAIL
     return OK
 
@@ -1513,7 +1513,8 @@ def _git_commit_email(repo: Repository) -> RESULT:
         run = step.get("run", "")
         if re.search("git config", run) and re.search("user.email", run):
             if not re.search(
-                "41898282\\+github-actions\\[bot\\]@users\\.noreply\\.github\\.com", run
+                "41898282\\+github-actions\\[bot\\]@users\\.noreply\\.github\\.com|outputs\\.app-slug",
+                run,
             ):
                 return FAIL
     return OK
