@@ -1508,6 +1508,44 @@ def _required_lockfile_drv_changed_status_check(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="no-flake-checker-action",
+    log_message="Do not use DeterminateSystems/flake-checker-action",
+    level="warning",
+)
+def _no_flake_checker_action(repo: Repository) -> RESULT:
+    for step in _iter_workflow_steps(repo):
+        if step.get("uses", "").startswith("DeterminateSystems/flake-checker-action"):
+            return FAIL
+    return OK
+
+
+@define_rule(
+    name="nix-flake-check-no-checkout",
+    log_message="Use direct repo URI instead of checkout for 'nix flake check'",
+    level="warning",
+)
+def _nix_flake_check_no_checkout(repo: Repository) -> RESULT:
+    if not _get_contents(repo, path="flake.nix"):
+        return SKIP
+
+    for job_name, job in _iter_workflow_jobs(repo):
+        job_has_nix_flake_check = False
+        job_has_checkout = False
+
+        for step in job.get("steps", []):
+            if step.get("uses", "").startswith("actions/checkout"):
+                job_has_checkout = True
+
+            if "nix flake check" in step.get("run", ""):
+                job_has_nix_flake_check = True
+
+        if job_has_nix_flake_check and job_has_checkout:
+            return FAIL
+
+    return OK
+
+
+@define_rule(
     name="git-commit-name",
     log_message="Git commit name to github-actions",
     level="error",
