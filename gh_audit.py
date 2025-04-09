@@ -1797,11 +1797,13 @@ def _runner_os(repo: Repository) -> RESULT:
             return FAIL
 
         matrix = job.get("strategy", {}).get("matrix", {})
-        for vs in matrix.values():
-            assert isinstance(vs, list)
-            for v in vs:
-                if isinstance(v, str) and v.endswith("-latest"):
-                    return FAIL
+        if isinstance(matrix, dict):
+            for vs in matrix.values():
+                if not isinstance(vs, list):
+                    continue
+                for v in vs:
+                    if isinstance(v, str) and v.endswith("-latest"):
+                        return FAIL
 
     return OK
 
@@ -1827,14 +1829,16 @@ def _runner_os_outdated(repo: Repository) -> RESULT:
                 return FAIL
 
         matrix = job.get("strategy", {}).get("matrix", {})
-        for vs in matrix.values():
-            assert isinstance(vs, list)
-            for v in vs:
-                if not isinstance(v, str):
+        if isinstance(matrix, dict):
+            for vs in matrix.values():
+                if not isinstance(vs, list):
                     continue
-                for os in _OUTDATED_RUNNER_IMAGES:
-                    if os in v:
-                        return FAIL
+                for v in vs:
+                    if not isinstance(v, str):
+                        continue
+                    for os in _OUTDATED_RUNNER_IMAGES:
+                        if os in v:
+                            return FAIL
 
     return OK
 
