@@ -1443,62 +1443,6 @@ def _treefmt_nix_configured(repo: Repository) -> bool:
 
 
 @define_rule(
-    name="missing-shfmt",
-    log_message="Missing GitHub Actions workflow for shfmt linting",
-    level="warning",
-)
-def _missing_shfmt(repo: Repository) -> RESULT:
-    if ".sh" not in _file_extnames(repo):
-        return SKIP
-
-    for step in _iter_workflow_steps(repo):
-        if re.search("shfmt ", step.get("run", "")):
-            return OK
-
-    if _treefmt_nix_configured(repo):
-        return OK
-
-    return FAIL
-
-
-@define_rule(
-    name="required-shfmt-status-check",
-    log_message="Add Ruleset to require 'shfmt' status check",
-    level="warning",
-)
-def _required_shfmt_status_check(repo: Repository) -> RESULT:
-    return _required_status_check(repo, "shfmt")
-
-
-@define_rule(
-    name="missing-shellcheck",
-    log_message="Missing GitHub Actions workflow for shellcheck linting",
-    level="warning",
-)
-def _missing_shellcheck(repo: Repository) -> RESULT:
-    if ".sh" not in _file_extnames(repo):
-        return SKIP
-
-    for step in _iter_workflow_steps(repo):
-        if re.search("shellcheck ", step.get("run", "")):
-            return OK
-
-    if _treefmt_nix_configured(repo):
-        return OK
-
-    return FAIL
-
-
-@define_rule(
-    name="required-shellcheck-status-check",
-    log_message="Add Ruleset to require 'shellcheck' status check",
-    level="warning",
-)
-def _required_shellcheck_status_check(repo: Repository) -> RESULT:
-    return _required_status_check(repo, "shellcheck")
-
-
-@define_rule(
     name="required-lockfile-drv-changed-status-check",
     log_message="Add Ruleset to require 'lockfile-drv-changed' status check",
     level="error",
