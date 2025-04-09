@@ -1662,6 +1662,15 @@ def _workflow_job_checkout_uses_token(job: WorkflowJob) -> bool:
     return False
 
 
+def _workflow_job_checkout(job: WorkflowJob, branch: str) -> bool:
+    for step in job.get("steps", []):
+        step_uses = step.get("uses", "")
+        step_with = step.get("with", {})
+        if step_uses.startswith("actions/checkout") and step_with.get("ref") == branch:
+            return True
+    return False
+
+
 @define_rule(
     name="git-push-pat",
     log_message="Use PAT when git pushing",
@@ -1672,6 +1681,10 @@ def _github_push_pat(repo: Repository) -> RESULT:
         if _workflow_job_checkout_uses_token(job):
             continue
         if not _workflow_job_uses_git_push(job):
+            continue
+        if _workflow_job_checkout(job, branch="secrets"):
+            continue
+        if _workflow_job_checkout(job, branch="data"):
             continue
 
         # Ignore gh-pages pushes
