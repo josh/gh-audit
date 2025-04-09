@@ -1785,34 +1785,6 @@ def _renovate_nix(repo: Repository) -> RESULT:
     return OK
 
 
-_QUICK_JOBS = [
-    "lint",
-    "merge",
-    "mypy",
-    "ruff",
-    "shellcheck",
-    "shfmt",
-]
-
-
-@define_rule(
-    name="workflow-timeout",
-    log_message="Private workflow missing timeout",
-    level="warning",
-)
-def _workflow_missing_timeout(repo: Repository) -> RESULT:
-    if not repo.private:
-        return SKIP
-
-    for name, job in _iter_workflow_jobs(repo):
-        if name in _QUICK_JOBS:
-            continue
-        if "timeout-minutes" not in job:
-            return FAIL
-
-    return OK
-
-
 @define_rule(
     name="runner-os",
     log_message="Lock GitHub Actions runner to a specific version",
