@@ -18,7 +18,7 @@ idna==3.10
     # via requests
 mypy==1.15.0
     # via gh-audit (pyproject.toml)
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via mypy
 pycparser==2.22
     # via cffi
