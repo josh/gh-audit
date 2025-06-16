@@ -10,7 +10,7 @@ charset-normalizer==3.4.2
     # via requests
 click==8.2.1
     # via gh-audit (pyproject.toml)
-cryptography==45.0.3
+cryptography==45.0.4
     # via pyjwt
 deprecated==1.2.18
     # via pygithub
