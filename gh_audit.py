@@ -839,28 +839,6 @@ def _enable_merge_commit(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="disable-squash-merge",
-    log_message="Repository should not allow squash merging",
-    level="warning",
-)
-def _disable_squash_merge(repo: Repository) -> RESULT:
-    if not repo.allow_squash_merge:
-        return OK
-    return FAIL
-
-
-@define_rule(
-    name="disable-rebase-merge",
-    log_message="Repository should not allow rebase merging",
-    level="warning",
-)
-def _disable_rebase_merge(repo: Repository) -> RESULT:
-    if not repo.allow_rebase_merge:
-        return OK
-    return FAIL
-
-
-@define_rule(
     name="dependabot-schedule-weekly",
     log_message="Dependabot should be scheduled weekly",
     level="warning",
