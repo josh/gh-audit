@@ -724,9 +724,29 @@ def _requirements_txt_uv_compiled(repo: Repository) -> RESULT:
     return FAIL
 
 
+@define_rule(
+    name="prefer-uv-lock",
+    log_message="Prefer uv.lock instead of requirements.txt",
+    level="warning",
+)
+def _prefer_uv_lock(repo: Repository) -> RESULT:
+    if not _has_requirements_txt(repo):
+        return SKIP
+    if _has_uv_lock(repo):
+        return OK
+    return FAIL
+
+
 @cache
 def _has_requirements_txt(repo: Repository) -> bool:
     if _get_contents(repo, path="requirements.txt"):
+        return True
+    return False
+
+
+@cache
+def _has_uv_lock(repo: Repository) -> bool:
+    if _get_contents(repo, path="uv.lock"):
         return True
     return False
 
