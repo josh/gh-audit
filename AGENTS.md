@@ -12,12 +12,13 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 pipx install uv
 ```
 
-Create a virtual environment and install the development dependencies:
+Create a virtual environment and install the development dependencies from
+`uv.lock`:
 
 ```sh
 uv venv
 source .venv/bin/activate
-uv pip install -e '.[dev]'
+uv sync
 ```
 
 ## Testing
@@ -25,14 +26,14 @@ uv pip install -e '.[dev]'
 Check code style with ruff:
 
 ```sh
-ruff format --diff .
-ruff check .
+uv run ruff format --diff .
+uv run ruff check .
 ```
 
 Check type correctness with mypy:
 
 ```sh
-mypy .
+uv run mypy .
 ```
 
 This repository currently has no automated test suite.
@@ -42,5 +43,5 @@ This repository currently has no automated test suite.
 You can automatically fix most formatting issues with:
 
 ```sh
-ruff format .
+uv run ruff format .
 ```

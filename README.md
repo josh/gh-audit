@@ -37,5 +37,5 @@ source .venv/bin/activate
 Now install the dependencies and test dependencies:
 
 ```sh
-uv pip install -e '.[dev]'
+uv sync
 ```
