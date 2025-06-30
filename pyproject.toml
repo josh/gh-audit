@@ -16,15 +16,16 @@ classifiers = [
 [project.entry-points.console_scripts]
 gh-audit = "gh_audit:main"
 
-[project.optional-dependencies]
-dev = [
-    "ruff>=0.4.0",
-    "mypy>=1.0.0",
-    "types-PyYAML>=6.0.1",
-]
 
 [tool.ruff.lint]
 extend-select = ["I", "UP"]
 
 [tool.mypy]
 strict = true
+
+[dependency-groups]
+dev = [
+    "mypy>=1.0.0,<2.0",
+    "ruff>=0.4.0",
+    "types-PyYAML>=6.0.1",
+]
