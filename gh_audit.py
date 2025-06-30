@@ -251,6 +251,17 @@ def _missing_readme(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="missing-agents",
+    log_message="Missing AGENTS.md file",
+    level="warning",
+)
+def _missing_agents(repo: Repository) -> RESULT:
+    if _get_contents(repo, path="AGENTS.md"):
+        return OK
+    return FAIL
+
+
+@define_rule(
     name="missing-topics",
     log_message="Missing topics",
     level="error",
