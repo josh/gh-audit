@@ -1821,6 +1821,7 @@ def _runner_os(repo: Repository) -> RESULT:
 _OUTDATED_RUNNER_IMAGES = [
     "ubuntu-22.04",
     "ubuntu-20.04",
+    "macos-13",
     "macos-12",
 ]
 
