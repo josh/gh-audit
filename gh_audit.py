@@ -553,6 +553,22 @@ def _missing_pyproject_requires_python(repo: Repository) -> RESULT:
     return FAIL
 
 
+@define_rule(
+    name="pyproject-legacy-version-classifiers",
+    log_message="Use requires-python instead of version classifiers",
+    level="warning",
+)
+def _pyproject_legacy_version_classifiers(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
+    for classifier in _pyproject_classifiers(repo):
+        if classifier.startswith("Programming Language :: Python ::"):
+            return FAIL
+    return OK
+
+
 @cache
 def _pyproject_all_dependencies(repo: Repository) -> set[str]:
     deps: set[str] = set()
