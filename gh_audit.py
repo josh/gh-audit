@@ -1868,6 +1868,56 @@ def _runner_os_outdated(repo: Repository) -> RESULT:
     return OK
 
 
+@cache
+def _published_nur_repos(owner: Any) -> set[str]:
+    repo = owner.get_repo("nurpkgs")
+    repos: set[str] = set()
+    try:
+        pkgs = repo.get_contents("pkgs/josh")
+    except GithubException:
+        return repos
+
+    for pkg in pkgs:
+        if not pkg.name.endswith(".nix"):
+            continue
+        try:
+            content = repo.get_contents(pkg.path).decoded_content.decode()
+        except GithubException:
+            continue
+        m = re.search(r'repo\s*=\s*"([^"]+)"', content)
+        if m:
+            repos.add(m.group(1))
+    return repos
+
+
+@cache
+def _nurpkg_exists(repo: Repository) -> bool:
+    try:
+        repos = _published_nur_repos(repo.owner)
+    except GithubException as exc:
+        if exc.status == 404:
+            return False
+        raise
+    return repo.name in repos
+
+
+@define_rule(
+    name="nurpkgs-publish",
+    log_message="Package not published to NUR",
+    level="warning",
+)
+def _nurpkgs_publish(repo: Repository) -> RESULT:
+    if repo.owner.login != "josh":
+        return SKIP
+    if repo.private:
+        return SKIP
+    if repo.language not in {"Python", "Swift", "Go"}:
+        return SKIP
+    if _nurpkg_exists(repo):
+        return OK
+    return FAIL
+
+
 @define_rule(
     name="arm64-qemu",
     log_message="Use native ARM64 runner instead of QEMU",
