@@ -430,28 +430,6 @@ def _pyproject_classifiers(repo: Repository) -> set[str]:
     return set(_load_pyproject(repo).get("project", {}).get("classifiers", []))
 
 
-_MIT_LICENSE_CLASSIFIER = "License :: OSI Approved :: MIT License"
-
-
-@define_rule(
-    name="pyproject-mit-license-classifier",
-    log_message="License classifier missing in pyproject.toml",
-    level="error",
-)
-def _pyproject_mit_license_classifier(repo: Repository) -> RESULT:
-    pyproject = _load_pyproject(repo)
-    if not pyproject:
-        return SKIP
-    if not repo.license:
-        return SKIP
-    if repo.license.name != "MIT License":
-        return SKIP
-
-    if _MIT_LICENSE_CLASSIFIER in _pyproject_classifiers(repo):
-        return OK
-    return FAIL
-
-
 def _pyproject_author_names(repo: Repository) -> set[str]:
     names: set[str] = set()
     for author in _load_pyproject(repo).get("project", {}).get("authors", []):
@@ -466,25 +444,6 @@ def _pyproject_author_emails(repo: Repository) -> set[str]:
         if email := author.get("email"):
             emails.add(email)
     return emails
-
-
-@define_rule(
-    name="pyproject-omit-license",
-    log_message="License classifier should be omitted when using MIT License",
-    level="warning",
-)
-def _pyproject_omit_license(repo: Repository) -> RESULT:
-    pyproject = _load_pyproject(repo)
-    if not pyproject:
-        return SKIP
-    if not repo.license:
-        return SKIP
-    if repo.license.name != "MIT License":
-        return SKIP
-
-    if "license" in _load_pyproject(repo).get("project", {}):
-        return FAIL
-    return OK
 
 
 @define_rule(
