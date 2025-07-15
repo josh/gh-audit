@@ -1854,16 +1854,36 @@ def _runner_os_outdated(repo: Repository) -> RESULT:
 
 
 @cache
-def _nurpkg_exists(repo: Repository) -> bool:
-    nur_repo = repo.owner.get_repo("nurpkgs")
-    path = f"pkgs/josh/{repo.name}.nix"
+def _published_nur_repos(owner: Any) -> set[str]:
+    repo = owner.get_repo("nurpkgs")
+    repos: set[str] = set()
     try:
-        nur_repo.get_contents(path)
-        return True
+        pkgs = repo.get_contents("pkgs/josh")
+    except GithubException:
+        return repos
+
+    for pkg in pkgs:
+        if not pkg.name.endswith(".nix"):
+            continue
+        try:
+            content = repo.get_contents(pkg.path).decoded_content.decode()
+        except GithubException:
+            continue
+        m = re.search(r'repo\s*=\s*"([^"]+)"', content)
+        if m:
+            repos.add(m.group(1))
+    return repos
+
+
+@cache
+def _nurpkg_exists(repo: Repository) -> bool:
+    try:
+        repos = _published_nur_repos(repo.owner)
     except GithubException as exc:
         if exc.status == 404:
             return False
         raise
+    return repo.name in repos
 
 
 @define_rule(
@@ -1873,6 +1893,8 @@ def _nurpkg_exists(repo: Repository) -> bool:
 )
 def _nurpkgs_publish(repo: Repository) -> RESULT:
     if repo.owner.login != "josh":
+        return SKIP
+    if repo.private:
         return SKIP
     if repo.language not in {"Python", "Swift", "Go"}:
         return SKIP
