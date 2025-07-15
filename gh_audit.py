@@ -635,6 +635,29 @@ def _pyproject_depends_on_requests(repo: Repository) -> RESULT:
 
 
 @cache
+def _pyproject_fmt_indent(repo: Repository) -> int | None:
+    return cast(
+        int | None,
+        _load_pyproject(repo).get("tool", {}).get("pyproject-fmt", {}).get("indent"),
+    )
+
+
+@define_rule(
+    name="missing-pyproject-fmt-indent",
+    log_message="tool.pyproject-fmt.indent should be 4",
+    level="warning",
+)
+def _missing_pyproject_fmt_indent(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
+    if _pyproject_fmt_indent(repo) == 4:
+        return OK
+    return FAIL
+
+
+@cache
 def _ruff_extend_select(repo: Repository) -> list[str]:
     return cast(
         list[str],
