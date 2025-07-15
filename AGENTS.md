@@ -45,3 +45,9 @@ You can automatically fix most formatting issues with:
 ```sh
 uv run ruff format .
 ```
+
+After making changes to `pyproject.toml`, ensure its formatted with `pyproject-fmt`.
+
+```sh
+uv tool run pyproject-fmt pyproject.toml
+```
