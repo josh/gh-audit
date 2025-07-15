@@ -2,6 +2,8 @@
 name = "gh-audit"
 version = "0.1.3"
 readme = "README.md"
+license = "MIT"
+license-files = [ "LICENSE" ]
 authors = [ { name = "Joshua Peek" } ]
 requires-python = ">=3.11"
 classifiers = [
@@ -17,8 +19,6 @@ dependencies = [
     "pygithub>=2",
     "pyyaml>=6.0.1",
 ]
-license = "MIT"
-license-files = ["LICENSE"]
 entry-points.console_scripts.gh-audit = "gh_audit:main"
 
 [dependency-groups]
