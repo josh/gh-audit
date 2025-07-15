@@ -1855,12 +1855,10 @@ def _runner_os_outdated(repo: Repository) -> RESULT:
 
 @cache
 def _nurpkg_exists(repo: Repository) -> bool:
+    nur_repo = repo.owner.get_repo("nurpkgs")
     path = f"pkgs/josh/{repo.name}.nix"
     try:
-        repo._requester.requestJsonAndCheck(
-            "GET",
-            f"https://api.github.com/repos/josh/nurpkgs/contents/{path}",
-        )
+        nur_repo.get_contents(path)
         return True
     except GithubException as exc:
         if exc.status == 404:
@@ -1871,7 +1869,7 @@ def _nurpkg_exists(repo: Repository) -> bool:
 @define_rule(
     name="nurpkgs-publish",
     log_message="Package not published to NUR",
-    level="error",
+    level="warning",
 )
 def _nurpkgs_publish(repo: Repository) -> RESULT:
     if repo.owner.login != "josh":
