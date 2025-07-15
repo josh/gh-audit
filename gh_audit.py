@@ -430,28 +430,6 @@ def _pyproject_classifiers(repo: Repository) -> set[str]:
     return set(_load_pyproject(repo).get("project", {}).get("classifiers", []))
 
 
-_MIT_LICENSE_CLASSIFIER = "License :: OSI Approved :: MIT License"
-
-
-@define_rule(
-    name="pyproject-mit-license-classifier",
-    log_message="License classifier missing in pyproject.toml",
-    level="error",
-)
-def _pyproject_mit_license_classifier(repo: Repository) -> RESULT:
-    pyproject = _load_pyproject(repo)
-    if not pyproject:
-        return SKIP
-    if not repo.license:
-        return SKIP
-    if repo.license.name != "MIT License":
-        return SKIP
-
-    if _MIT_LICENSE_CLASSIFIER in _pyproject_classifiers(repo):
-        return OK
-    return FAIL
-
-
 def _pyproject_author_names(repo: Repository) -> set[str]:
     names: set[str] = set()
     for author in _load_pyproject(repo).get("project", {}).get("authors", []):
@@ -466,25 +444,6 @@ def _pyproject_author_emails(repo: Repository) -> set[str]:
         if email := author.get("email"):
             emails.add(email)
     return emails
-
-
-@define_rule(
-    name="pyproject-omit-license",
-    log_message="License classifier should be omitted when using MIT License",
-    level="warning",
-)
-def _pyproject_omit_license(repo: Repository) -> RESULT:
-    pyproject = _load_pyproject(repo)
-    if not pyproject:
-        return SKIP
-    if not repo.license:
-        return SKIP
-    if repo.license.name != "MIT License":
-        return SKIP
-
-    if "license" in _load_pyproject(repo).get("project", {}):
-        return FAIL
-    return OK
 
 
 @define_rule(
@@ -528,6 +487,46 @@ def _pyproject_readme(repo: Repository) -> RESULT:
         return SKIP
 
     if pyproject.get("project", {}).get("readme") is None:
+        return FAIL
+    return OK
+
+
+@define_rule(
+    name="pyproject-pep639-license",
+    log_message="Use PEP 639 license expression and license-files",
+    level="warning",
+)
+def _pyproject_pep639_license(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
+    project = pyproject.get("project", {})
+    license_value = project.get("license")
+    license_files_value = project.get("license-files")
+
+    if isinstance(license_value, dict):
+        return FAIL
+    if not isinstance(license_value, str):
+        return FAIL
+    if not isinstance(license_files_value, list) or len(license_files_value) == 0:
+        return FAIL
+    return OK
+
+
+@define_rule(
+    name="pyproject-legacy-license-classifier",
+    log_message="Remove legacy 'License ::' classifiers from pyproject.toml",
+    level="warning",
+)
+def _pyproject_legacy_license_classifier(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
+    project = pyproject.get("project", {})
+    classifiers = project.get("classifiers", [])
+    if any(c.startswith("License ::") for c in classifiers):
         return FAIL
     return OK
 
