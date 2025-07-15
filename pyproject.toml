@@ -9,9 +9,8 @@ dependencies = [
     "pygithub>=2.0.0",
     "pyyaml>=6.0.1",
 ]
-classifiers = [
-    "License :: OSI Approved :: MIT License",
-]
+license = "MIT"
+license-files = ["LICENSE"]
 
 [project.entry-points.console_scripts]
 gh-audit = "gh_audit:main"

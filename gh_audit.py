@@ -532,6 +532,46 @@ def _pyproject_readme(repo: Repository) -> RESULT:
     return OK
 
 
+@define_rule(
+    name="pyproject-pep639-license",
+    log_message="Use PEP 639 license expression and license-files",
+    level="warning",
+)
+def _pyproject_pep639_license(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
+    project = pyproject.get("project", {})
+    license_value = project.get("license")
+    license_files_value = project.get("license-files")
+
+    if isinstance(license_value, dict):
+        return FAIL
+    if not isinstance(license_value, str):
+        return FAIL
+    if not isinstance(license_files_value, list) or len(license_files_value) == 0:
+        return FAIL
+    return OK
+
+
+@define_rule(
+    name="pyproject-legacy-license-classifier",
+    log_message="Remove legacy 'License ::' classifiers from pyproject.toml",
+    level="warning",
+)
+def _pyproject_legacy_license_classifier(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
+    project = pyproject.get("project", {})
+    classifiers = project.get("classifiers", [])
+    if any(c.startswith("License ::") for c in classifiers):
+        return FAIL
+    return OK
+
+
 def _pyproject_requires_python(repo: Repository) -> str:
     return cast(
         str, _load_pyproject(repo).get("project", {}).get("requires-python", "")
