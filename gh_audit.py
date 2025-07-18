@@ -892,19 +892,6 @@ def _enable_merge_commit(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="dependabot-schedule-weekly",
-    log_message="Dependabot should be scheduled weekly",
-    level="warning",
-)
-def _dependabot_schedule_weekly(repo: Repository) -> RESULT:
-    if not _dependabot_config(repo):
-        return SKIP
-    if _dependabot_update_schedule_intervals(repo) != {"weekly"}:
-        return FAIL
-    return OK
-
-
-@define_rule(
     name="pip-dependabot",
     log_message="Dependabot should be enabled for pip ecosystem",
     level="error",
