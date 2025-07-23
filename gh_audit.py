@@ -378,7 +378,13 @@ def _get_contents_text(repo: Repository, path: str) -> str:
 
 @cache
 def _ls_tree(repo: Repository) -> list[Path]:
-    return [Path(item.path) for item in repo.get_git_tree("HEAD", recursive=True).tree]
+    try:
+        tree = repo.get_git_tree("HEAD", recursive=True)
+    except GithubException as exc:
+        if exc.status == 404:
+            return []
+        raise
+    return [Path(item.path) for item in tree.tree]
 
 
 @cache
