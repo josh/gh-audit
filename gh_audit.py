@@ -381,7 +381,7 @@ def _ls_tree(repo: Repository) -> list[Path]:
     try:
         tree = repo.get_git_tree("HEAD", recursive=True)
     except GithubException as exc:
-        if exc.status == 404:
+        if exc.status in {404, 409}:
             return []
         raise
     return [Path(item.path) for item in tree.tree]
