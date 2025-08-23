@@ -1554,7 +1554,7 @@ def _no_workflow_env_secrets(repo: Repository) -> RESULT:
         workflow = _get_workflow_by_path(repo, path)
         env = workflow.get("env", {})
         for value in env.values():
-            if "${{ secrets." in value:
+            if isinstance(value, str) and "${{ secrets." in value:
                 return FAIL
     return OK
 
@@ -1568,7 +1568,7 @@ def _no_job_env_secrets(repo: Repository) -> RESULT:
     for _, job in _iter_workflow_jobs(repo):
         env = job.get("env", {})
         for value in env.values():
-            if "${{ secrets." in value:
+            if isinstance(value, str) and "${{ secrets." in value:
                 return FAIL
     return OK
 
