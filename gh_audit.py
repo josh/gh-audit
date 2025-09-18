@@ -1782,12 +1782,16 @@ def _repository_has_changes_since_released(repo: Repository) -> bool:
     except GithubException:
         return True
 
-    for commit in repo.get_commits(since=release.created_at, author=repo.owner):
-        if len(commit.parents) > 1:
-            continue
+    default_branch = repo.default_branch
+    if default_branch is None:
         return True
 
-    return False
+    try:
+        comparison = repo.compare(base=release.tag_name, head=default_branch)
+    except GithubException:
+        return True
+
+    return comparison.ahead_by > 0
 
 
 @cache
