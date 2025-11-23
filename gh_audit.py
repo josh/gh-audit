@@ -1872,6 +1872,46 @@ def _runner_os_outdated(repo: Repository) -> RESULT:
     return OK
 
 
+_UBUNTU_SLIM_WORKFLOW_FILES = {
+    "merge.yml",
+    "lint.yml",
+    "trakt.yml",
+}
+
+
+@define_rule(
+    name="ubuntu-slim",
+    log_message="Use ubuntu-slim runner",
+    level="warning",
+)
+def _ubuntu_slim_workflows(repo: Repository) -> RESULT:
+    workflows_checked = False
+
+    for workflow_file in _UBUNTU_SLIM_WORKFLOW_FILES:
+        workflow_path = Path(".github/workflows") / workflow_file
+
+        if not _get_contents(repo, path=str(workflow_path)):
+            continue
+
+        workflows_checked = True
+        workflow = _get_workflow_by_path(repo, workflow_path)
+
+        for job in workflow.get("jobs", {}).values():
+            runs_on = job.get("runs-on", "")
+            if isinstance(runs_on, str):
+                runners = [runs_on]
+            elif isinstance(runs_on, list):
+                runners = [runner for runner in runs_on if isinstance(runner, str)]
+            else:
+                continue
+
+            for runner in runners:
+                if "ubuntu-latest" in runner or "ubuntu-24.04" in runner:
+                    return FAIL
+
+    return SKIP if not workflows_checked else OK
+
+
 @cache
 def _published_nur_repos(owner: Any) -> set[str]:
     repo = owner.get_repo("nurpkgs")
