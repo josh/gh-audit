@@ -846,6 +846,43 @@ def _dependabot_update_schedule_intervals(repo: Repository) -> set[str]:
 
 
 @define_rule(
+    name="dependabot-schedule",
+    log_message="Dependabot updates should be monthly or weekly with 7-day cooldown",
+    level="warning",
+)
+def _dependabot_schedule(repo: Repository) -> RESULT:
+    config = _dependabot_config(repo)
+    if not config:
+        return SKIP
+
+    updates = config.get("updates", [])
+    if not updates:
+        return SKIP
+
+    for update in updates:
+        schedule = update.get("schedule", {})
+        interval = schedule.get("interval")
+
+        cooldown = update.get("cooldown", {})
+        default_cooldown_days = cooldown.get("default-days")
+
+        try:
+            cooldown_days = int(default_cooldown_days)
+        except (TypeError, ValueError):
+            cooldown_days = None
+
+        if interval == "monthly":
+            continue
+
+        if interval == "weekly" and cooldown_days == 7:
+            continue
+
+        return FAIL
+
+    return OK
+
+
+@define_rule(
     name="delete-branch-on-merge",
     log_message="Repository should delete branches on merge",
     level="error",
