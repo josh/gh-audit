@@ -874,7 +874,7 @@ def _dependabot_schedule(repo: Repository) -> RESULT:
         if interval == "monthly":
             continue
 
-        if interval == "weekly" and cooldown_days == 7:
+        if interval == "weekly" and cooldown_days is not None and cooldown_days >= 7:
             continue
 
         return FAIL
