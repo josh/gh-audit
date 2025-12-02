@@ -1486,6 +1486,39 @@ def _missing_mypy(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="mypy-uv-resolution-matrix",
+    log_message="mypy job in lint.yml should set UV_RESOLUTION matrix",
+    level="error",
+)
+def _mypy_uv_resolution_matrix(repo: Repository) -> RESULT:
+    if repo.language != "Python":
+        return SKIP
+
+    lint_workflow = _get_workflow_by_path(repo, Path(".github/workflows/lint.yml"))
+    mypy_job = lint_workflow.get("jobs", {}).get("mypy")
+    if not mypy_job:
+        return SKIP
+
+    matrix = mypy_job.get("strategy", {}).get("matrix", {})
+    uv_resolutions: list[str] | None = None
+    if isinstance(matrix, dict):
+        uv_resolution_values = matrix.get("uv_resolution")
+        if isinstance(uv_resolution_values, list):
+            uv_resolutions = [
+                value for value in uv_resolution_values if isinstance(value, str)
+            ]
+
+    if uv_resolutions is None or set(uv_resolutions) != {"highest", "lowest-direct"}:
+        return FAIL
+
+    job_env = mypy_job.get("env", {})
+    if job_env.get("UV_RESOLUTION") != "${{ matrix.uv_resolution }}":
+        return FAIL
+
+    return OK
+
+
+@define_rule(
     name="required-mypy-status-check",
     log_message="Add Ruleset to require 'mypy' status check",
     level="warning",
