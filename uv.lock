@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 
 [[package]]
@@ -198,14 +198,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1.1" },
-    { name = "pygithub", specifier = ">=2.0.0" },
+    { name = "pygithub", specifier = ">=2.6.0" },
     { name = "pyyaml", specifier = ">=6.0.1" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "mypy", specifier = ">=1.0.0,<2.0" },
-    { name = "ruff", specifier = ">=0.4.0" },
+    { name = "mypy", specifier = ">=1,<2" },
+    { name = "ruff", specifier = ">=0.4" },
     { name = "types-pyyaml", specifier = ">=6.0.1" },
 ]
 
