@@ -1504,7 +1504,9 @@ def _mypy_uv_resolution_matrix(repo: Repository) -> RESULT:
     if isinstance(matrix, dict):
         uv_resolution_values = matrix.get("uv_resolution")
         if isinstance(uv_resolution_values, list):
-            uv_resolutions = [value for value in uv_resolution_values if isinstance(value, str)]
+            uv_resolutions = [
+                value for value in uv_resolution_values if isinstance(value, str)
+            ]
 
     if uv_resolutions is None or set(uv_resolutions) != {"highest", "lowest-direct"}:
         return FAIL
