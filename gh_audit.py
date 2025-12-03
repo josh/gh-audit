@@ -543,6 +543,20 @@ def _pyproject_requires_python(repo: Repository) -> str:
     )
 
 
+def _pyproject_requires_python_min_version(
+    requires_python: str,
+) -> tuple[int, int] | None:
+    versions: list[tuple[int, int]] = []
+
+    for major, minor in re.findall(r">=\s*(\d+)\.(\d+)", requires_python):
+        versions.append((int(major), int(minor)))
+
+    if not versions:
+        return None
+
+    return max(versions)
+
+
 @define_rule(
     name="missing-pyproject-requires-python",
     log_message="project.requires-python missing in pyproject.toml",
@@ -556,6 +570,29 @@ def _missing_pyproject_requires_python(repo: Repository) -> RESULT:
     if _pyproject_requires_python(repo):
         return OK
     return FAIL
+
+
+@define_rule(
+    name="pyproject-requires-python-deprecated",
+    log_message="project.requires-python should target Python 3.10 or newer",
+    level="warning",
+)
+def _pyproject_requires_python_deprecated(repo: Repository) -> RESULT:
+    pyproject = _load_pyproject(repo)
+    if not pyproject:
+        return SKIP
+
+    requires_python = _pyproject_requires_python(repo)
+    if not requires_python:
+        return SKIP
+
+    min_version = _pyproject_requires_python_min_version(requires_python)
+    if min_version is None:
+        return SKIP
+
+    if min_version < (3, 10):
+        return FAIL
+    return OK
 
 
 @cache
