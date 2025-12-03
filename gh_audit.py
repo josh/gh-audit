@@ -1356,7 +1356,7 @@ def _uv_pip_install_with_requirements(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="unpinned-workflow-branch-actions",
+    name="unpinned-workflow-actions",
     log_message="GitHub Actions workflows should pin actions to commit SHAs instead of branches",
     level="error",
 )
