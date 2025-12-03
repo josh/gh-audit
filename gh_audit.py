@@ -1356,6 +1356,25 @@ def _uv_pip_install_with_requirements(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="unpinned-workflow-branch-actions",
+    log_message="GitHub Actions workflows should pin actions to commit SHAs instead of branches",
+    level="error",
+)
+def _unpinned_workflow_branch_actions(repo: Repository) -> RESULT:
+    pattern = re.compile(r".+@[0-9a-fA-F]{40}")
+
+    for step in _iter_workflow_steps(repo):
+        uses = step.get("uses", "")
+        if not uses:
+            continue
+
+        if not re.fullmatch(pattern, uses):
+            return FAIL
+
+    return OK
+
+
+@define_rule(
     name="setup-python-with-python-version-file",
     log_message="setup-python should use pyproject.toml",
     level="error",
