@@ -197,8 +197,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "click", specifier = ">=8.1.1" },
-    { name = "pygithub", specifier = ">=2.6" },
+    { name = "click", specifier = ">=8.1.1,<9" },
+    { name = "pygithub", specifier = ">=2.6,<3" },
     { name = "pyyaml", specifier = ">=6.0.1,<7" },
 ]
 

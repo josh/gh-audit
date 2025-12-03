@@ -14,8 +14,8 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "click>=8.1.1",
-    "pygithub>=2.6",
+    "click>=8.1.1,<9",
+    "pygithub>=2.6,<3",
     "pyyaml>=6.0.1,<7",
 ]
 entry-points.console_scripts.gh-audit = "gh_audit:main"
