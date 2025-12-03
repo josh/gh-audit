@@ -1575,6 +1575,39 @@ def _mypy_uv_resolution_matrix(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="test-uv-resolution-matrix",
+    log_message="test job in test.yml should set UV_RESOLUTION matrix",
+    level="error",
+)
+def _test_uv_resolution_matrix(repo: Repository) -> RESULT:
+    if repo.language != "Python":
+        return SKIP
+
+    test_workflow = _get_workflow_by_path(repo, Path(".github/workflows/test.yml"))
+    test_job = test_workflow.get("jobs", {}).get("test")
+    if not test_job:
+        return SKIP
+
+    matrix = test_job.get("strategy", {}).get("matrix", {})
+    uv_resolutions: list[str] | None = None
+    if isinstance(matrix, dict):
+        uv_resolution_values = matrix.get("uv_resolution")
+        if isinstance(uv_resolution_values, list):
+            uv_resolutions = [
+                value for value in uv_resolution_values if isinstance(value, str)
+            ]
+
+    if uv_resolutions is None or set(uv_resolutions) != {"highest", "lowest-direct"}:
+        return FAIL
+
+    job_env = test_job.get("env", {})
+    if job_env.get("UV_RESOLUTION") != "${{ matrix.uv_resolution }}":
+        return FAIL
+
+    return OK
+
+
+@define_rule(
     name="required-mypy-status-check",
     log_message="Add Ruleset to require 'mypy' status check",
     level="warning",
