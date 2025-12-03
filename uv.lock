@@ -199,14 +199,14 @@ dev = [
 requires-dist = [
     { name = "click", specifier = ">=8.1.1" },
     { name = "pygithub", specifier = ">=2.6" },
-    { name = "pyyaml", specifier = ">=6.0.1" },
+    { name = "pyyaml", specifier = ">=6.0.1,<7" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy", specifier = ">=1,<2" },
     { name = "ruff", specifier = ">=0.3,<2" },
-    { name = "types-pyyaml", specifier = ">=6.0.1" },
+    { name = "types-pyyaml", specifier = ">=6.0.1,<7" },
 ]
 
 [[package]]
