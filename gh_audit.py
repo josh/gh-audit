@@ -1177,6 +1177,23 @@ def _default_workflow_permissions(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="actions-sha-pinning-required",
+    log_message="Actions must require pinning to commit SHAs",
+    level="error",
+)
+def _actions_sha_pinning_required(repo: Repository) -> RESULT:
+    if repo.fork:
+        return SKIP
+    permissions = _get_actions_permissions(repo)
+    if permissions["enabled"] is False:
+        return SKIP
+
+    if permissions.get("sha_pinning_required"):
+        return OK
+    return FAIL
+
+
+@define_rule(
     name="allow-actions-approve-prs",
     log_message="Allow Actions to approve pull request reviews",
     level="warning",
@@ -1195,6 +1212,7 @@ def _allow_actions_approve_prs(repo: Repository) -> RESULT:
 class RepositoryActionPermissions(TypedDict):
     enabled: bool
     allowed_actions: NotRequired[Literal["all", "local_only", "selected"]]
+    sha_pinning_required: NotRequired[bool]
 
 
 class RepositoryWorkflowPermissions(TypedDict):
