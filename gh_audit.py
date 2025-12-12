@@ -1922,7 +1922,7 @@ def _has_workflow_files(repo: Repository) -> bool:
 
 
 @define_rule(
-    name="tag-stable-projects",
+    name="tag-new-release",
     log_message="Tag latest repository release",
     level="warning",
 )
@@ -1936,7 +1936,7 @@ def _tag_stable_projects(repo: Repository) -> RESULT:
     if _repository_has_recent_changes(repo):
         return SKIP
 
-    if _repository_has_changes_since_released(repo):
+    if _repository_has_significant_changes_since_release(repo):
         return FAIL
 
     return OK
@@ -1953,7 +1953,7 @@ def _repository_has_recent_changes(repo: Repository) -> bool:
 
 
 @cache
-def _repository_has_changes_since_released(repo: Repository) -> bool:
+def _repository_has_significant_changes_since_release(repo: Repository) -> bool:
     try:
         release = repo.get_latest_release()
     except GithubException:
@@ -1968,7 +1968,34 @@ def _repository_has_changes_since_released(repo: Repository) -> bool:
     except GithubException:
         return True
 
-    return comparison.ahead_by > 0
+    if comparison.ahead_by == 0:
+        return False
+
+    changed_paths = {file.filename for file in comparison.files}
+    filtered_paths = _filter_significant_paths(repo, changed_paths)
+
+    return len(filtered_paths) > 0
+
+
+_IGNORED_RELEASE_PATH_PREFIXES = (".github/", "test/")
+
+
+def _filter_significant_paths(repo: Repository, paths: set[str]) -> set[str]:
+    ignored_file_paths = set()
+
+    if repo.language == "Python":
+        ignored_file_paths.add("uv.lock")
+
+    filtered_paths = set()
+
+    for path in paths:
+        if path.startswith(_IGNORED_RELEASE_PATH_PREFIXES):
+            continue
+        if path in ignored_file_paths:
+            continue
+        filtered_paths.add(path)
+
+    return filtered_paths
 
 
 @cache
