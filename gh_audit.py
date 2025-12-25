@@ -1126,11 +1126,19 @@ def _allow_aws_owned_actions(repo: Repository) -> RESULT:
 
 @define_rule(
     name="allow-dependabot-owned-actions",
-    log_message="Repository allow actions created by dependabot",
-    level="error",
+    log_message="Repository explicitly allows dependabot-owned actions",
+    level="warning",
 )
 def _allow_dependabot_owned_actions(repo: Repository) -> RESULT:
-    return _allow_org_owned_actions(repo, "dependabot")
+    permissions = _get_actions_permissions(repo)
+    if permissions["enabled"] is False:
+        return SKIP
+    if permissions.get("allowed_actions") != "selected":
+        return OK
+    selected_actions = _get_repo_actions_selected_actions(repo)
+    if "dependabot/*" in selected_actions["patterns_allowed"]:
+        return FAIL
+    return OK
 
 
 @define_rule(
