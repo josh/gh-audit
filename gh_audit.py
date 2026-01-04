@@ -1863,50 +1863,6 @@ def _workflow_job_git_push_branch(job: WorkflowJob, branch: str) -> bool:
     return False
 
 
-def _workflow_job_checkout_uses_token(job: WorkflowJob) -> bool:
-    for step in job.get("steps", []):
-        step_uses = step.get("uses", "")
-        step_with = step.get("with", {})
-        if step_uses.startswith("actions/checkout") and step_with.get("token"):
-            return True
-    return False
-
-
-def _workflow_job_checkout(job: WorkflowJob, branch: str) -> bool:
-    for step in job.get("steps", []):
-        step_uses = step.get("uses", "")
-        step_with = step.get("with", {})
-        if step_uses.startswith("actions/checkout") and step_with.get("ref") == branch:
-            return True
-    return False
-
-
-@define_rule(
-    name="git-push-pat",
-    log_message="Use PAT when git pushing",
-    level="warning",
-)
-def _github_push_pat(repo: Repository) -> RESULT:
-    for job_name, job in _iter_workflow_jobs(repo):
-        if _workflow_job_checkout_uses_token(job):
-            continue
-        if not _workflow_job_uses_git_push(job):
-            continue
-        if _workflow_job_checkout(job, branch="secrets"):
-            continue
-        if _workflow_job_checkout(job, branch="data"):
-            continue
-
-        # Ignore gh-pages pushes
-        gh_pages_branch = _repo_gh_pages_source(repo)
-        if gh_pages_branch and _workflow_job_git_push_branch(job, gh_pages_branch):
-            continue
-
-        return FAIL
-
-    return OK
-
-
 @define_rule(
     name="dependabot-github-actions",
     log_message="Dependabot should be enabled for GitHub Actions if workflows are present",
