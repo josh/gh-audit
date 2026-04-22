@@ -1028,6 +1028,20 @@ def _dependabot_ignores_ruff_patches(repo: Repository) -> RESULT:
 
 
 @define_rule(
+    name="uv-dependabot-lockfile-only",
+    log_message="Dependabot uv ecosystem should use lockfile-only versioning strategy",
+    level="error",
+)
+def _uv_dependabot_lockfile_only(repo: Repository) -> RESULT:
+    for update in _dependabot_config(repo).get("updates", []):
+        if update.get("package-ecosystem") == "uv":
+            if update.get("versioning-strategy") == "lockfile-only":
+                return OK
+            return FAIL
+    return SKIP
+
+
+@define_rule(
     name="disable-actions",
     log_message="Repository without workflows should disable Actions",
     level="error",
