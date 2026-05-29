@@ -1166,12 +1166,20 @@ def _allow_determinate_systems_owned_actions(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="allow-cachix-owned-actions",
-    log_message="Repository allow actions created by cachix",
-    level="error",
+    name="disallow-cachix-owned-actions",
+    log_message="Repository should remove cachix from allowed actions",
+    level="warning",
 )
-def _allow_cachix_owned_actions(repo: Repository) -> RESULT:
-    return _allow_org_owned_actions(repo, "cachix")
+def _disallow_cachix_owned_actions(repo: Repository) -> RESULT:
+    permissions = _get_actions_permissions(repo)
+    if permissions["enabled"] is False:
+        return SKIP
+    if permissions.get("allowed_actions") != "selected":
+        return OK
+    selected_actions = _get_repo_actions_selected_actions(repo)
+    if "cachix/*" in selected_actions["patterns_allowed"]:
+        return FAIL
+    return OK
 
 
 @define_rule(
