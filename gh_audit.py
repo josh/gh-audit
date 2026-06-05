@@ -31,7 +31,7 @@ def _gh_auth_token() -> str | None:
         return None
 
 
-class RuleParamType(click.ParamType):
+class RuleParamType(click.ParamType):  # type: ignore[type-arg,unused-ignore]
     name = "rule"
 
     def convert(self, value: str, param: Any, ctx: Any) -> "Rule":
