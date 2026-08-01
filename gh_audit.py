@@ -386,11 +386,11 @@ def _load_pyproject(repo: Repository) -> dict[str, Any]:
     logger.debug("Loading pyproject.toml for %s", repo.full_name)
     contents = _get_contents(repo, path="pyproject.toml")
     if not contents:
-        return dict()
+        return {}
     try:
         return tomllib.loads(contents.decoded_content.decode("utf-8"))
     except tomllib.TOMLDecodeError:
-        return dict()
+        return {}
 
 
 @define_rule(
@@ -793,16 +793,12 @@ def _prefer_uv_lock(repo: Repository) -> RESULT:
 
 @cache
 def _has_requirements_txt(repo: Repository) -> bool:
-    if _get_contents(repo, path="requirements.txt"):
-        return True
-    return False
+    return bool(_get_contents(repo, path="requirements.txt"))
 
 
 @cache
 def _has_uv_lock(repo: Repository) -> bool:
-    if _get_contents(repo, path="uv.lock"):
-        return True
-    return False
+    return bool(_get_contents(repo, path="uv.lock"))
 
 
 @cache
@@ -854,14 +850,14 @@ def _dependabot_config(repo: Repository) -> dict[str, Any]:
     logger.debug("Loading .github/dependabot.yml for %s", repo.full_name)
     contents = _get_contents(repo, path=".github/dependabot.yml")
     if not contents:
-        return dict()
+        return {}
     try:
         return cast(
             dict[str, Any],
             yaml.safe_load(contents.decoded_content.decode("utf-8")),
         )
     except yaml.YAMLError:
-        return dict()
+        return {}
 
 
 def _dependabot_update_schedule_intervals(repo: Repository) -> set[str]:
@@ -1431,9 +1427,11 @@ def _disable_setup_python_cache(repo: Repository) -> RESULT:
             continue
 
         for step in job.get("steps", []):
-            if step.get("uses", "").startswith("actions/setup-python"):
-                if step.get("with", {}).get("cache", None) is not None:
-                    return FAIL
+            if (
+                step.get("uses", "").startswith("actions/setup-python")
+                and step.get("with", {}).get("cache", None) is not None
+            ):
+                return FAIL
 
     return OK
 
@@ -1649,9 +1647,7 @@ def _required_mypy_status_check(repo: Repository) -> RESULT:
 def _treefmt_nix_configured(repo: Repository) -> bool:
     if _get_contents(repo, path="treefmt.nix"):
         return True
-    if _get_contents(repo, path="internal/treefmt.nix"):
-        return True
-    return False
+    return bool(_get_contents(repo, path="internal/treefmt.nix"))
 
 
 @define_rule(
@@ -1709,9 +1705,12 @@ def _nix_flake_check_no_checkout(repo: Repository) -> RESULT:
 def _git_commit_name(repo: Repository) -> RESULT:
     for step in _iter_workflow_steps(repo):
         run = step.get("run", "")
-        if re.search("git config", run) and re.search("user.name", run):
-            if not re.search("github-actions\\[bot\\]|outputs\\.app-slug", run):
-                return FAIL
+        if (
+            re.search("git config", run)
+            and re.search("user.name", run)
+            and not re.search("github-actions\\[bot\\]|outputs\\.app-slug", run)
+        ):
+            return FAIL
     return OK
 
 
@@ -1723,12 +1722,15 @@ def _git_commit_name(repo: Repository) -> RESULT:
 def _git_commit_email(repo: Repository) -> RESULT:
     for step in _iter_workflow_steps(repo):
         run = step.get("run", "")
-        if re.search("git config", run) and re.search("user.email", run):
-            if not re.search(
+        if (
+            re.search("git config", run)
+            and re.search("user.email", run)
+            and not re.search(
                 "41898282\\+github-actions\\[bot\\]@users\\.noreply\\.github\\.com|outputs\\.app-slug",
                 run,
-            ):
-                return FAIL
+            )
+        ):
+            return FAIL
     return OK
 
 
@@ -1795,7 +1797,7 @@ def _git_push_concurrency_group(repo: Repository) -> RESULT:
         workflow = _get_workflow_by_path(repo, path)
         workflow_has_concurrency_group = "concurrency" in workflow
 
-        for name, job in workflow.get("jobs", {}).items():
+        for job in workflow.get("jobs", {}).values():
             job_has_concurrency_group = (
                 workflow_has_concurrency_group or "concurrency" in job
             )
@@ -2142,9 +2144,11 @@ def _arm64_qemu(repo: Repository) -> RESULT:
     for step in _iter_workflow_steps(repo):
         step_uses = step.get("uses", "")
         step_platforms = step.get("with", {}).get("platforms", "")
-        if step_uses.startswith("docker/setup-qemu-action"):
-            if "arm64" in step_platforms:
-                return FAIL
+        if (
+            step_uses.startswith("docker/setup-qemu-action")
+            and "arm64" in step_platforms
+        ):
+            return FAIL
 
     return OK
 
