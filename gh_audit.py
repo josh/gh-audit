@@ -954,7 +954,13 @@ def _dependabot_auto_merge(repo: Repository) -> RESULT:
         return SKIP
     if not _dependabot_config(repo):
         return SKIP
-    if not _get_contents(repo, path=".github/workflows/merge.yml"):
+    if not any(
+        _get_contents(repo, path=path)
+        for path in (
+            ".github/workflows/merge.yml",
+            ".github/workflows/merge.yaml",
+        )
+    ):
         return FAIL
     return OK
 
