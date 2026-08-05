@@ -939,9 +939,22 @@ def _auto_merge(repo: Repository) -> RESULT:
         return SKIP
     if not _dependabot_config(repo):
         return SKIP
+    if not _has_dependabot_auto_merge_workflow(repo):
+        return SKIP
     if repo.allow_auto_merge:
         return OK
     return FAIL
+
+
+@cache
+def _has_dependabot_auto_merge_workflow(repo: Repository) -> bool:
+    return any(
+        _get_contents(repo, path=path)
+        for path in (
+            ".github/workflows/merge.yml",
+            ".github/workflows/merge.yaml",
+        )
+    )
 
 
 @define_rule(
@@ -954,13 +967,7 @@ def _dependabot_auto_merge(repo: Repository) -> RESULT:
         return SKIP
     if not _dependabot_config(repo):
         return SKIP
-    if not any(
-        _get_contents(repo, path=path)
-        for path in (
-            ".github/workflows/merge.yml",
-            ".github/workflows/merge.yaml",
-        )
-    ):
+    if not _has_dependabot_auto_merge_workflow(repo):
         return FAIL
     return OK
 
