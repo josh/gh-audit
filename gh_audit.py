@@ -1417,6 +1417,9 @@ def _unpinned_workflow_branch_actions(repo: Repository) -> RESULT:
         if not uses:
             continue
 
+        if uses.startswith(("./", "docker://")):
+            continue
+
         if not re.fullmatch(pattern, uses):
             return FAIL
 
