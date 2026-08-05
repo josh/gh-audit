@@ -96,8 +96,14 @@ def main(
     with Github(auth=Auth.Token(github_token)) as g:
         user = g.get_user()
 
+        audited: set[str] = set()
+
         for name in repository:
-            repo = user.get_repo(name)
+            if "/" in name:
+                repo = g.get_repo(name)
+            else:
+                repo = user.get_repo(name)
+            audited.add(repo.full_name)
             for rule in rules:
                 rule(repo=repo)
 
@@ -106,6 +112,8 @@ def main(
                 if repo.owner.login != user.login:
                     continue
                 if repo.archived or repo.fork:
+                    continue
+                if repo.full_name in audited:
                     continue
                 for rule in rules:
                     rule(repo=repo)
