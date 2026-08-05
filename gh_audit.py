@@ -852,12 +852,12 @@ def _dependabot_config(repo: Repository) -> dict[str, Any]:
     if not contents:
         return {}
     try:
-        return cast(
-            dict[str, Any],
-            yaml.safe_load(contents.decoded_content.decode("utf-8")),
-        )
+        config = yaml.safe_load(contents.decoded_content.decode("utf-8"))
     except yaml.YAMLError:
         return {}
+    if not isinstance(config, dict):
+        return {}
+    return cast(dict[str, Any], config)
 
 
 def _dependabot_update_schedule_intervals(repo: Repository) -> set[str]:
