@@ -597,7 +597,13 @@ def _pyproject_all_dependencies(repo: Repository) -> set[str]:
 
 
 def _pydep_has_lower_bound(dep: str) -> bool:
-    return "==" in dep or ">" in dep or "~=" in dep or "@" in dep
+    requirement = dep.split(";")[0]
+    return (
+        "==" in requirement
+        or ">" in requirement
+        or "~=" in requirement
+        or "@" in requirement
+    )
 
 
 @define_rule(
