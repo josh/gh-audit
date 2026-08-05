@@ -1024,12 +1024,13 @@ def _dependabot_ignores_ruff_patches(repo: Repository) -> RESULT:
     level="error",
 )
 def _uv_dependabot_lockfile_only(repo: Repository) -> RESULT:
+    found = False
     for update in _dependabot_config(repo).get("updates", []):
         if update.get("package-ecosystem") == "uv":
-            if update.get("versioning-strategy") == "lockfile-only":
-                return OK
-            return FAIL
-    return SKIP
+            if update.get("versioning-strategy") != "lockfile-only":
+                return FAIL
+            found = True
+    return OK if found else SKIP
 
 
 @define_rule(
