@@ -191,7 +191,7 @@ WorkflowJob = TypedDict(
         "runs-on": str,
         "strategy": NotRequired[WorkflowStrategy],
         "env": NotRequired[dict[str, str]],
-        "permissions": NotRequired[dict[str, str]],
+        "permissions": NotRequired[dict[str, str] | Literal["read-all", "write-all"]],
         "timeout-minutes": NotRequired[int],
         "uses": NotRequired[str],
         "steps": list[WorkflowStep],
@@ -202,7 +202,7 @@ WorkflowJob = TypedDict(
 class Workflow(TypedDict):
     name: str
     on: str | list[str] | dict[str, Any]
-    permissions: NotRequired[dict[str, str]]
+    permissions: NotRequired[dict[str, str] | Literal["read-all", "write-all"]]
     concurrency: NotRequired[Any]
     env: NotRequired[dict[str, str]]
     jobs: dict[str, WorkflowJob]
@@ -1852,14 +1852,14 @@ def _enable_write_contents_permission(repo: Repository) -> RESULT:
 
     for path in _get_workflow_paths(repo):
         workflow = _get_workflow_by_path(repo, path)
-        workflow_has_write_permission = (workflow.get("permissions") or {}).get(
-            "contents"
-        ) == "write"
+        workflow_has_write_permission = _has_contents_write_permission(
+            workflow.get("permissions")
+        )
 
         for job in (workflow.get("jobs") or {}).values():
-            job_has_write_permission = (job.get("permissions") or {}).get(
-                "contents"
-            ) == "write"
+            job_has_write_permission = _has_contents_write_permission(
+                job.get("permissions")
+            )
             has_write_permission = (
                 job_has_write_permission or workflow_has_write_permission
             )
@@ -1868,6 +1868,16 @@ def _enable_write_contents_permission(repo: Repository) -> RESULT:
                 return FAIL
 
     return OK
+
+
+def _has_contents_write_permission(
+    permissions: dict[str, str] | Literal["read-all", "write-all"] | None,
+) -> bool:
+    if permissions == "write-all":
+        return True
+    if isinstance(permissions, dict):
+        return permissions.get("contents") == "write"
+    return False
 
 
 def _workflow_job_uses_git_push(job: WorkflowJob) -> bool:
