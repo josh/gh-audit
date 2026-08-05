@@ -55,7 +55,7 @@ _RULE_TYPE = RuleParamType()
     help="GitHub API token",
     metavar="TOKEN",
     required=True,
-    default=_gh_auth_token(),
+    default=_gh_auth_token,
 )
 @click.option("--verbose", is_flag=True, default=False, help="Enable debug logging")
 @click.option(
