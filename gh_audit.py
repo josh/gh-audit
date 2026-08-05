@@ -422,10 +422,6 @@ def _missing_pyproject_project_name(repo: Repository) -> RESULT:
     return OK
 
 
-def _pyproject_classifiers(repo: Repository) -> set[str]:
-    return set(_load_pyproject(repo).get("project", {}).get("classifiers", []))
-
-
 def _pyproject_author_names(repo: Repository) -> set[str]:
     names: set[str] = set()
     for author in _load_pyproject(repo).get("project", {}).get("authors", []):
@@ -862,13 +858,6 @@ def _dependabot_config(repo: Repository) -> dict[str, Any]:
     return cast(dict[str, Any], config)
 
 
-def _dependabot_update_schedule_intervals(repo: Repository) -> set[str]:
-    return {
-        update.get("schedule", {}).get("interval")
-        for update in _dependabot_config(repo).get("updates", [])
-    }
-
-
 @define_rule(
     name="dependabot-schedule",
     log_message="Dependabot updates should be monthly or weekly with 7-day cooldown",
@@ -1259,12 +1248,6 @@ def _get_workflow_permissions(repo: Repository) -> RepositoryWorkflowPermissions
     return cast(RepositoryWorkflowPermissions, data)
 
 
-# TODO: Deprecate this util
-@cache
-def _get_workflow(repo: Repository, name: str) -> Workflow:
-    return _get_workflow_by_path(repo, Path(f".github/workflows/{name}.yml"))
-
-
 @cache
 def _get_workflow_by_path(repo: Repository, path: Path) -> Workflow:
     assert str(path).startswith(".github/workflows/"), path
@@ -1334,13 +1317,6 @@ def _job_matrix(job: WorkflowJob) -> dict[str, Any]:
     if not isinstance(matrix, dict):
         return {}
     return cast(dict[str, Any], matrix)
-
-
-def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
-    for workflow in workflows:
-        if name in _get_workflow(repo, workflow).get("jobs", {}):
-            return True
-    return False
 
 
 def _any_job_defined(repo: Repository, job_name: str) -> bool:
@@ -1676,13 +1652,6 @@ def _required_mypy_status_check(repo: Repository) -> RESULT:
     return _required_status_check(repo, "mypy")
 
 
-@cache
-def _treefmt_nix_configured(repo: Repository) -> bool:
-    if _get_contents(repo, path="treefmt.nix"):
-        return True
-    return bool(_get_contents(repo, path="internal/treefmt.nix"))
-
-
 @define_rule(
     name="required-lockfile-drv-changed-status-check",
     log_message="Add Ruleset to require 'lockfile-drv-changed' status check",
@@ -1889,14 +1858,6 @@ def _workflow_job_uses_git_push(job: WorkflowJob) -> bool:
     for step in job.get("steps") or []:
         step_run = step.get("run", "")
         if re.search("git push", step_run):
-            return True
-    return False
-
-
-def _workflow_job_git_push_branch(job: WorkflowJob, branch: str) -> bool:
-    for step in job.get("steps", []):
-        step_run = step.get("run", "")
-        if re.search("git push", step_run) and re.search(branch, step_run):
             return True
     return False
 
