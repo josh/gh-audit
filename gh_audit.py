@@ -1367,9 +1367,9 @@ def _use_uv_pip(repo: Repository) -> RESULT:
         return SKIP
 
     for step in _iter_workflow_steps(repo):
-        run = step.get("run", "")
-        if re.search("pip install", run) and not re.search("uv pip install", run):
-            return FAIL
+        for line in step.get("run", "").splitlines():
+            if re.search("pip install", line) and not re.search("uv pip install", line):
+                return FAIL
 
     return OK
 
@@ -1397,9 +1397,11 @@ def _uv_pip_install_with_requirements(repo: Repository) -> RESULT:
         return SKIP
 
     for step in _iter_workflow_steps(repo):
-        run = step.get("run", "")
-        if re.search("uv pip install", run) and not re.search("requirements.txt", run):
-            return FAIL
+        for line in step.get("run", "").splitlines():
+            if re.search("uv pip install", line) and not re.search(
+                "requirements.txt", line
+            ):
+                return FAIL
 
     return OK
 
