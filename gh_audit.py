@@ -1940,10 +1940,14 @@ def _tag_stable_projects(repo: Repository) -> RESULT:
 @cache
 def _repository_has_recent_changes(repo: Repository) -> bool:
     since = datetime.now(tz=UTC) - timedelta(days=90)
-    for commit in repo.get_commits(since=since, author=repo.owner):
-        if len(commit.parents) > 1:
-            continue
-        return True
+    try:
+        for commit in repo.get_commits(since=since, author=repo.owner):
+            if len(commit.parents) > 1:
+                continue
+            return True
+    except GithubException as exc:
+        if exc.status != 409:
+            raise
     return False
 
 
