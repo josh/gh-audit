@@ -2002,17 +2002,29 @@ def _repository_is_new(repo: Repository) -> bool:
 
 
 @define_rule(
-    name="renovate-nix",
-    log_message="Configure Renovate for Nix updates",
+    name="nix-dependabot",
+    log_message="Dependabot should be enabled for nix ecosystem",
     level="error",
 )
-def _renovate_nix(repo: Repository) -> RESULT:
+def _nix_dependabot(repo: Repository) -> RESULT:
     if not _get_contents(repo, path="flake.nix"):
         return SKIP
 
-    if not _get_contents(repo, path=".github/renovate.json"):
-        return FAIL
+    for update in _dependabot_config(repo).get("updates", []):
+        if update.get("package-ecosystem") == "nix":
+            return OK
 
+    return FAIL
+
+
+@define_rule(
+    name="no-renovate",
+    log_message="Migrate legacy Renovate config to Dependabot",
+    level="warning",
+)
+def _no_renovate(repo: Repository) -> RESULT:
+    if _get_contents(repo, path=".github/renovate.json"):
+        return FAIL
     return OK
 
 
