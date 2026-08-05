@@ -1293,7 +1293,8 @@ def _get_workflow_paths(repo: Repository) -> list[Path]:
             and path.parts[0] == ".github"
             and path.parts[1] == "workflows"
         ):
-            assert path.suffix == ".yml" or path.suffix == ".yaml"
+            if path.suffix not in (".yml", ".yaml"):
+                continue
             paths.append(path)
     return paths
 
