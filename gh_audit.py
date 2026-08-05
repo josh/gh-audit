@@ -84,7 +84,8 @@ def main(
 
     rules: list[Rule] = RULES
     if override_rules:
-        rules = list(override_rules)
+        names = {rule.name for rule in override_rules}
+        rules = [rule for rule in RULES if rule.name in names]
     logger.debug("Applying %d rules", len(rules))
 
     global rule_message_format
