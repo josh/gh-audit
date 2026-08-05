@@ -345,7 +345,7 @@ def _git_size_error(repo: Repository) -> RESULT:
     level="warning",
 )
 def _git_size_warning(repo: Repository) -> RESULT:
-    if repo.size > (50 * 1024):
+    if (50 * 1024) < repo.size <= (1024 * 1024):
         return FAIL
     return OK
 
