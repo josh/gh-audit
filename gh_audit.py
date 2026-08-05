@@ -444,7 +444,7 @@ def _pyproject_author_emails(repo: Repository) -> set[str]:
 @define_rule(
     name="pyproject-author-name",
     log_message="project.authors[0].name missing in pyproject.toml",
-    level="warn",
+    level="warning",
 )
 def _pyproject_author_name(repo: Repository) -> RESULT:
     pyproject = _load_pyproject(repo)
