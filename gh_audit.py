@@ -1276,6 +1276,8 @@ def _get_workflow_by_path(repo: Repository, path: Path) -> Workflow:
         return empty_workflow
     try:
         workflow = yaml.safe_load(contents.decoded_content.decode("utf-8"))
+        if not isinstance(workflow, dict):
+            return empty_workflow
         # Workaround stupid YAML parsing bug
         if True in workflow:
             workflow["on"] = workflow.pop(True)
