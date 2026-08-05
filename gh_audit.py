@@ -657,7 +657,8 @@ def _pyproject_depends_on_requests(repo: Repository) -> RESULT:
         return SKIP
 
     for dep in _pyproject_all_dependencies(repo):
-        if dep.startswith("requests"):
+        match = re.match(r"[A-Za-z0-9][A-Za-z0-9._-]*", dep)
+        if match and re.sub(r"[-_.]+", "-", match.group()).lower() == "requests":
             return FAIL
     return OK
 
