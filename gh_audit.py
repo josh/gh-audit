@@ -1947,6 +1947,9 @@ def _tag_stable_projects(repo: Repository) -> RESULT:
     if _repository_is_new(repo):
         return SKIP
 
+    if not _repository_is_releaseable(repo):
+        return SKIP
+
     if _repository_has_recent_changes(repo):
         return SKIP
 
@@ -1954,6 +1957,23 @@ def _tag_stable_projects(repo: Repository) -> RESULT:
         return FAIL
 
     return OK
+
+
+_RELEASE_MANIFESTS = {
+    Path("Cargo.toml"),
+    Path("Package.swift"),
+    Path("go.mod"),
+    Path("package.json"),
+    Path("pyproject.toml"),
+}
+
+
+@cache
+def _repository_is_releaseable(repo: Repository) -> bool:
+    for path in _ls_tree(repo):
+        if path in _RELEASE_MANIFESTS or path.name == "Chart.yaml":
+            return True
+    return False
 
 
 @cache
