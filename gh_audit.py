@@ -825,9 +825,13 @@ def _requirements_txt_is_exact(repo: Repository) -> bool:
             stripped = line.strip()
             if not stripped or stripped.startswith(("#", "-")):
                 continue
-            if "@" in stripped:
+            requirement = stripped.split(";", 1)[0].strip()
+            if "@" in requirement:
                 continue
-            if "==" not in stripped:
+            if "==" not in requirement:
+                return False
+            version = requirement.split("==", 1)[1].split()[0]
+            if "*" in version:
                 return False
         return True
     else:
