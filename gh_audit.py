@@ -1480,7 +1480,7 @@ def _missing_ruff_error(repo: Repository) -> RESULT:
         if re.search("ruff ", step.get("run", "")):
             return OK
 
-    return OK
+    return FAIL
 
 
 @define_rule(
@@ -1496,7 +1496,7 @@ def _missing_ruff_warning(repo: Repository) -> RESULT:
         if re.search("ruff ", step.get("run", "")):
             return OK
 
-    return OK
+    return FAIL
 
 
 class RepositoryRulesetRequiredStatusCheck(TypedDict):
@@ -1589,7 +1589,7 @@ def _missing_mypy(repo: Repository) -> RESULT:
         if re.search("mypy ", step.get("run", "")):
             return OK
 
-    return OK
+    return FAIL
 
 
 @define_rule(
