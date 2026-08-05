@@ -810,11 +810,12 @@ def _requirements_txt(repo: Repository) -> str:
 def _requirements_txt_is_exact(repo: Repository) -> bool:
     if text := _requirements_txt(repo):
         for line in text.splitlines():
-            if line.lstrip().startswith("#"):
+            stripped = line.strip()
+            if not stripped or stripped.startswith(("#", "-")):
                 continue
-            if "@" in line:
+            if "@" in stripped:
                 continue
-            if "==" not in line:
+            if "==" not in stripped:
                 return False
         return True
     else:
