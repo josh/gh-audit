@@ -1301,14 +1301,34 @@ def _get_workflow_paths(repo: Repository) -> list[Path]:
 def _iter_workflow_jobs(repo: Repository) -> Iterator[tuple[str, WorkflowJob]]:
     for path in _get_workflow_paths(repo):
         workflow = _get_workflow_by_path(repo, path)
-        yield from workflow.get("jobs", {}).items()
+        yield from (workflow.get("jobs") or {}).items()
 
 
 def _iter_workflow_steps(repo: Repository) -> Iterator[WorkflowStep]:
     for path in _get_workflow_paths(repo):
         workflow = _get_workflow_by_path(repo, path)
-        for job in workflow.get("jobs", {}).values():
-            yield from job.get("steps", [])
+        for job in (workflow.get("jobs") or {}).values():
+            yield from job.get("steps") or []
+
+
+def _job_runs_on(job: WorkflowJob) -> list[str]:
+    runs_on = job.get("runs-on", "")
+    if isinstance(runs_on, str):
+        return [runs_on]
+    elif isinstance(runs_on, list):
+        return [runner for runner in runs_on if isinstance(runner, str)]
+    else:
+        return []
+
+
+def _job_matrix(job: WorkflowJob) -> dict[str, Any]:
+    strategy = job.get("strategy")
+    if not isinstance(strategy, dict):
+        return {}
+    matrix = strategy.get("matrix")
+    if not isinstance(matrix, dict):
+        return {}
+    return cast(dict[str, Any], matrix)
 
 
 def _job_defined(repo: Repository, workflows: list[str], name: str) -> bool:
@@ -1408,9 +1428,10 @@ def _setup_python_with_python_version_file(repo: Repository) -> RESULT:
     for step in _iter_workflow_steps(repo):
         if not step.get("uses", "").startswith("actions/setup-python"):
             continue
-        if "matrix" in step.get("with", {}).get("python-version", ""):
+        step_with = step.get("with") or {}
+        if "matrix" in str(step_with.get("python-version", "")):
             continue
-        if step.get("with", {}).get("python-version-file", "") != "pyproject.toml":
+        if step_with.get("python-version-file", "") != "pyproject.toml":
             return FAIL
 
     return OK
@@ -1426,10 +1447,10 @@ def _disable_setup_python_cache(repo: Repository) -> RESULT:
         if not _job_uses_uv(job):
             continue
 
-        for step in job.get("steps", []):
+        for step in job.get("steps") or []:
             if (
                 step.get("uses", "").startswith("actions/setup-python")
-                and step.get("with", {}).get("cache", None) is not None
+                and (step.get("with") or {}).get("cache", None) is not None
             ):
                 return FAIL
 
@@ -1437,7 +1458,7 @@ def _disable_setup_python_cache(repo: Repository) -> RESULT:
 
 
 def _job_uses_uv(job: WorkflowJob) -> bool:
-    for step in job.get("steps", []):
+    for step in job.get("steps") or []:
         if re.search("uv ", step.get("run", "")):
             return True
     return False
@@ -1582,7 +1603,7 @@ def _mypy_uv_resolution_matrix(repo: Repository) -> RESULT:
     if not mypy_job:
         return SKIP
 
-    matrix = mypy_job.get("strategy", {}).get("matrix", {})
+    matrix = _job_matrix(mypy_job)
     uv_resolutions: list[str] | None = None
     if isinstance(matrix, dict):
         uv_resolution_values = matrix.get("uv_resolution")
@@ -1594,7 +1615,7 @@ def _mypy_uv_resolution_matrix(repo: Repository) -> RESULT:
     if uv_resolutions is None or set(uv_resolutions) != {"highest", "lowest-direct"}:
         return FAIL
 
-    job_env = mypy_job.get("env", {})
+    job_env = mypy_job.get("env") or {}
     if job_env.get("UV_RESOLUTION") != "${{ matrix.uv_resolution }}":
         return FAIL
 
@@ -1615,7 +1636,7 @@ def _test_uv_resolution_matrix(repo: Repository) -> RESULT:
     if not test_job:
         return SKIP
 
-    matrix = test_job.get("strategy", {}).get("matrix", {})
+    matrix = _job_matrix(test_job)
     uv_resolutions: list[str] | None = None
     if isinstance(matrix, dict):
         uv_resolution_values = matrix.get("uv_resolution")
@@ -1627,7 +1648,7 @@ def _test_uv_resolution_matrix(repo: Repository) -> RESULT:
     if uv_resolutions is None or set(uv_resolutions) != {"highest", "lowest-direct"}:
         return FAIL
 
-    job_env = test_job.get("env", {})
+    job_env = test_job.get("env") or {}
     if job_env.get("UV_RESOLUTION") != "${{ matrix.uv_resolution }}":
         return FAIL
 
@@ -1684,7 +1705,7 @@ def _nix_flake_check_no_checkout(repo: Repository) -> RESULT:
         job_has_nix_flake_check = False
         job_has_checkout = False
 
-        for step in job.get("steps", []):
+        for step in job.get("steps") or []:
             if step.get("uses", "").startswith("actions/checkout"):
                 job_has_checkout = True
 
@@ -1742,7 +1763,7 @@ def _git_commit_email(repo: Repository) -> RESULT:
 def _no_workflow_env_secrets(repo: Repository) -> RESULT:
     for path in _get_workflow_paths(repo):
         workflow = _get_workflow_by_path(repo, path)
-        env = workflow.get("env", {})
+        env = workflow.get("env") or {}
         for value in env.values():
             if isinstance(value, str) and "${{ secrets." in value:
                 return FAIL
@@ -1756,7 +1777,7 @@ def _no_workflow_env_secrets(repo: Repository) -> RESULT:
 )
 def _no_job_env_secrets(repo: Repository) -> RESULT:
     for _, job in _iter_workflow_jobs(repo):
-        env = job.get("env", {})
+        env = job.get("env") or {}
         for value in env.values():
             if isinstance(value, str) and "${{ secrets." in value:
                 return FAIL
@@ -1797,12 +1818,12 @@ def _git_push_concurrency_group(repo: Repository) -> RESULT:
         workflow = _get_workflow_by_path(repo, path)
         workflow_has_concurrency_group = "concurrency" in workflow
 
-        for job in workflow.get("jobs", {}).values():
+        for job in (workflow.get("jobs") or {}).values():
             job_has_concurrency_group = (
                 workflow_has_concurrency_group or "concurrency" in job
             )
             job_has_git_push = False
-            for step in job.get("steps", []):
+            for step in job.get("steps") or []:
                 if re.search("git push", step.get("run", "")):
                     job_has_git_push = True
             if job_has_git_push and not job_has_concurrency_group:
@@ -1834,14 +1855,14 @@ def _enable_write_contents_permission(repo: Repository) -> RESULT:
 
     for path in _get_workflow_paths(repo):
         workflow = _get_workflow_by_path(repo, path)
-        workflow_has_write_permission = (
-            workflow.get("permissions", {}).get("contents") == "write"
-        )
+        workflow_has_write_permission = (workflow.get("permissions") or {}).get(
+            "contents"
+        ) == "write"
 
-        for job in workflow.get("jobs", {}).values():
-            job_has_write_permission = (
-                job.get("permissions", {}).get("contents") == "write"
-            )
+        for job in (workflow.get("jobs") or {}).values():
+            job_has_write_permission = (job.get("permissions") or {}).get(
+                "contents"
+            ) == "write"
             has_write_permission = (
                 job_has_write_permission or workflow_has_write_permission
             )
@@ -1853,7 +1874,7 @@ def _enable_write_contents_permission(repo: Repository) -> RESULT:
 
 
 def _workflow_job_uses_git_push(job: WorkflowJob) -> bool:
-    for step in job.get("steps", []):
+    for step in job.get("steps") or []:
         step_run = step.get("run", "")
         if re.search("git push", step_run):
             return True
@@ -1994,11 +2015,11 @@ def _renovate_nix(repo: Repository) -> RESULT:
 )
 def _runner_os(repo: Repository) -> RESULT:
     for _, job in _iter_workflow_jobs(repo):
-        runs_on = job.get("runs-on", "")
-        if "-latest" in runs_on:
-            return FAIL
+        for runner in _job_runs_on(job):
+            if "-latest" in runner:
+                return FAIL
 
-        matrix = job.get("strategy", {}).get("matrix", {})
+        matrix = _job_matrix(job)
         if isinstance(matrix, dict):
             for vs in matrix.values():
                 if not isinstance(vs, list):
@@ -2025,12 +2046,12 @@ _OUTDATED_RUNNER_IMAGES = [
 )
 def _runner_os_outdated(repo: Repository) -> RESULT:
     for _, job in _iter_workflow_jobs(repo):
-        runs_on = job.get("runs-on", "")
-        for os in _OUTDATED_RUNNER_IMAGES:
-            if os in runs_on:
-                return FAIL
+        for runner in _job_runs_on(job):
+            for os in _OUTDATED_RUNNER_IMAGES:
+                if os in runner:
+                    return FAIL
 
-        matrix = job.get("strategy", {}).get("matrix", {})
+        matrix = _job_matrix(job)
         if isinstance(matrix, dict):
             for vs in matrix.values():
                 if not isinstance(vs, list):
@@ -2069,16 +2090,8 @@ def _ubuntu_slim_workflows(repo: Repository) -> RESULT:
         workflows_checked = True
         workflow = _get_workflow_by_path(repo, workflow_path)
 
-        for job in workflow.get("jobs", {}).values():
-            runs_on = job.get("runs-on", "")
-            if isinstance(runs_on, str):
-                runners = [runs_on]
-            elif isinstance(runs_on, list):
-                runners = [runner for runner in runs_on if isinstance(runner, str)]
-            else:
-                continue
-
-            for runner in runners:
+        for job in (workflow.get("jobs") or {}).values():
+            for runner in _job_runs_on(job):
                 if "ubuntu-latest" in runner or "ubuntu-24.04" in runner:
                     return FAIL
 
@@ -2143,7 +2156,7 @@ def _nurpkgs_publish(repo: Repository) -> RESULT:
 def _arm64_qemu(repo: Repository) -> RESULT:
     for step in _iter_workflow_steps(repo):
         step_uses = step.get("uses", "")
-        step_platforms = step.get("with", {}).get("platforms", "")
+        step_platforms = str((step.get("with") or {}).get("platforms", ""))
         if (
             step_uses.startswith("docker/setup-qemu-action")
             and "arm64" in step_platforms
