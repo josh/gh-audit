@@ -1495,11 +1495,9 @@ RepositoryRuleset = RepositoryRulesetRequiredStatusChecks
 
 
 @cache
-def _get_repo_rulesets(
-    repo: Repository, branch: str = "main"
-) -> list[RepositoryRuleset]:
+def _get_repo_rulesets(repo: Repository) -> list[RepositoryRuleset]:
     _, data = repo._requester.requestJsonAndCheck(
-        "GET", f"{repo.url}/rules/branches/{branch}"
+        "GET", f"{repo.url}/rules/branches/{repo.default_branch}"
     )
     return cast(list[RepositoryRuleset], data)
 
