@@ -184,6 +184,7 @@ WorkflowJob = TypedDict(
         "env": NotRequired[dict[str, str]],
         "permissions": NotRequired[dict[str, str]],
         "timeout-minutes": NotRequired[int],
+        "uses": NotRequired[str],
         "steps": list[WorkflowStep],
     },
 )
@@ -1064,7 +1065,7 @@ def _actions_allowed_actions_all(repo: Repository) -> RESULT:
     level="error",
 )
 def _actions_github_owned_allowed(repo: Repository) -> RESULT:
-    if not _workflow_step_uses(repo, re.compile("actions/")):
+    if not _workflow_uses(repo, re.compile("actions/")):
         return SKIP
 
     permissions = _get_actions_permissions(repo)
@@ -1086,7 +1087,7 @@ def _actions_github_owned_allowed(repo: Repository) -> RESULT:
 
 def _allow_org_owned_actions(repo: Repository, trusted_org: str) -> RESULT:
     org_pattern = re.compile(f"{trusted_org}/")
-    if not _workflow_step_uses(repo, org_pattern):
+    if not _workflow_uses(repo, org_pattern):
         return SKIP
     permissions = _get_actions_permissions(repo)
     if permissions["enabled"] is False:
@@ -1328,10 +1329,18 @@ def _any_job_defined(repo: Repository, job_name: str) -> bool:
     return False
 
 
-def _workflow_step_uses(repo: Repository, pattern: re.Pattern[str]) -> bool:
+def _iter_workflow_uses(repo: Repository) -> Iterator[str]:
+    for _, job in _iter_workflow_jobs(repo):
+        if job_uses := job.get("uses", ""):
+            yield job_uses
     for step in _iter_workflow_steps(repo):
-        step_uses = step.get("uses", "")
-        if re.match(pattern, step_uses):
+        if step_uses := step.get("uses", ""):
+            yield step_uses
+
+
+def _workflow_uses(repo: Repository, pattern: re.Pattern[str]) -> bool:
+    for uses in _iter_workflow_uses(repo):
+        if re.match(pattern, uses):
             return True
     return False
 
@@ -1391,11 +1400,7 @@ def _uv_pip_install_with_requirements(repo: Repository) -> RESULT:
 def _unpinned_workflow_branch_actions(repo: Repository) -> RESULT:
     pattern = re.compile(r".+@[0-9a-fA-F]{40}")
 
-    for step in _iter_workflow_steps(repo):
-        uses = step.get("uses", "")
-        if not uses:
-            continue
-
+    for uses in _iter_workflow_uses(repo):
         if uses.startswith(("./", "docker://")):
             continue
 
