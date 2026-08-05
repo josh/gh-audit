@@ -1478,14 +1478,28 @@ def _job_uses_uv(job: WorkflowJob) -> bool:
     return False
 
 
+@cache
+def _treefmt_nix_config_text(repo: Repository) -> str:
+    return _get_contents_text(repo, path="treefmt.nix") or _get_contents_text(
+        repo, path="internal/treefmt.nix"
+    )
+
+
+def _treefmt_ruff_check_enabled(repo: Repository) -> bool:
+    return bool(re.search(r"ruff-check\.enable = true", _treefmt_nix_config_text(repo)))
+
+
 @define_rule(
     name="missing-ruff",
-    log_message="Missing GitHub Actions workflow for ruff linting",
+    log_message="Missing ruff linting via workflow or treefmt",
     level="error",
 )
 def _missing_ruff_error(repo: Repository) -> RESULT:
     if repo.language != "Python":
         return SKIP
+
+    if _treefmt_ruff_check_enabled(repo):
+        return OK
 
     for step in _iter_workflow_steps(repo):
         if re.search("ruff ", step.get("run", "")):
@@ -1496,12 +1510,15 @@ def _missing_ruff_error(repo: Repository) -> RESULT:
 
 @define_rule(
     name="missing-ruff",
-    log_message="Missing GitHub Actions workflow for ruff linting",
+    log_message="Missing ruff linting via workflow or treefmt",
     level="warning",
 )
 def _missing_ruff_warning(repo: Repository) -> RESULT:
     if ".py" not in _file_extnames(repo):
         return SKIP
+
+    if _treefmt_ruff_check_enabled(repo):
+        return OK
 
     for step in _iter_workflow_steps(repo):
         if re.search("ruff ", step.get("run", "")):
