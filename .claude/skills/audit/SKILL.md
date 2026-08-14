@@ -138,19 +138,18 @@ can do if the next prompt is already on screen. Resume triage when they reply.
 
 ## 6. Adjust
 
-Edit the rule in `gh_audit.py`, then land it immediately as its own atomic change:
+Edit the rule in `gh_audit.py` and leave it as a local change set. Do not create a
+bookmark and do not push — the user reviews and lands these themselves.
 
 ```bash
 uv run python gh_audit.py --rule <name> --active     # confirm the tuning worked
 uv run ruff format --diff . && uv run ruff check . && uv run mypy .
-jj git fetch --remote origin
-jj new main@origin -m "<why, one line, under 72 chars>"
-jj bookmark create <descriptive-name> -r @
-jj git push --bookmark <descriptive-name>
+jj new main@origin -m "<why, one line, under 72 chars>"   # only if @ is already described
 ```
 
-- **Never open a PR.** The user opens, reviews, and merges them.
-- Re-fetch before each `jj new` — `main@origin` moves during the session as they merge.
+- Keep one described change per adjustment so each stays atomic and independently
+  droppable. If `@` is empty and undescribed, just describe it rather than starting
+  another change.
 - There is no test suite; ruff and mypy are the full gate.
 - Then resume triage where it left off.
 
@@ -162,5 +161,5 @@ nothing to memory — a skip is not a mute and leaves no trace past this session
 ## 8. Wrap up
 
 Report: findings triaged, split by Mute / Fix / Adjust / Skip; findings auto-suppressed
-by existing mutes; bookmarks pushed and awaiting review; and the accumulated fix list as
-an actionable checklist.
+by existing mutes; local change sets left for the user to review and land; and the
+accumulated fix list as an actionable checklist.
