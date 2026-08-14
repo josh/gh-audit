@@ -2004,11 +2004,37 @@ def _repository_has_recent_changes(repo: Repository) -> bool:
     return False
 
 
+_VERSION_TAG_RE = re.compile(r"^v?(\d+(?:\.\d+)*)$")
+
+
+@cache
+def _latest_release_tag(repo: Repository) -> str | None:
+    try:
+        return repo.get_latest_release().tag_name
+    except GithubException:
+        pass
+
+    # Not every tagged release gets a GitHub Release object, so fall back to the
+    # highest version tag.
+    best: tuple[tuple[int, ...], str] | None = None
+    try:
+        tags = list(repo.get_tags())
+    except GithubException:
+        return None
+    for tag in tags:
+        match = _VERSION_TAG_RE.match(tag.name)
+        if not match:
+            continue
+        version = tuple(int(part) for part in match.group(1).split("."))
+        if best is None or version > best[0]:
+            best = (version, tag.name)
+    return best[1] if best else None
+
+
 @cache
 def _repository_has_significant_changes_since_release(repo: Repository) -> bool:
-    try:
-        release = repo.get_latest_release()
-    except GithubException:
+    tag_name = _latest_release_tag(repo)
+    if tag_name is None:
         return True
 
     default_branch = repo.default_branch
@@ -2016,7 +2042,7 @@ def _repository_has_significant_changes_since_release(repo: Repository) -> bool:
         return True
 
     try:
-        comparison = repo.compare(base=release.tag_name, head=default_branch)
+        comparison = repo.compare(base=tag_name, head=default_branch)
     except GithubException:
         return True
 
