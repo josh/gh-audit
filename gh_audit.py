@@ -1224,6 +1224,9 @@ def _actions_sha_pinning_required(repo: Repository) -> RESULT:
     permissions = _get_actions_permissions(repo)
     if permissions["enabled"] is False:
         return SKIP
+    # Nothing to pin, and disable-actions already covers this case.
+    if not _get_workflow_paths(repo):
+        return SKIP
 
     if permissions.get("sha_pinning_required"):
         return OK
