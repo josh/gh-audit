@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import subprocess
@@ -2070,15 +2071,40 @@ def _nix_dependabot(repo: Repository) -> RESULT:
     return FAIL
 
 
+@cache
+def _renovate_config(repo: Repository) -> dict[str, Any]:
+    logger.debug("Loading .github/renovate.json for %s", repo.full_name)
+    contents = _get_contents(repo, path=".github/renovate.json")
+    if not contents:
+        return {}
+    try:
+        config = json.loads(contents.decoded_content.decode("utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(config, dict):
+        return {}
+    return cast(dict[str, Any], config)
+
+
+# Renovate managers that Dependabot has no equivalent ecosystem for
+def _renovate_only_managers(repo: Repository) -> bool:
+    config = _renovate_config(repo)
+    if config.get("customManagers"):
+        return True
+    return "homebrew" in config
+
+
 @define_rule(
     name="no-renovate",
     log_message="Migrate legacy Renovate config to Dependabot",
     level="warning",
 )
 def _no_renovate(repo: Repository) -> RESULT:
-    if _get_contents(repo, path=".github/renovate.json"):
-        return FAIL
-    return OK
+    if not _get_contents(repo, path=".github/renovate.json"):
+        return OK
+    if _renovate_only_managers(repo):
+        return SKIP
+    return FAIL
 
 
 @define_rule(
