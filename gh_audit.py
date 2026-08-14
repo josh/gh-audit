@@ -2051,7 +2051,7 @@ def _repository_has_significant_changes_since_release(repo: Repository) -> bool:
         return False
 
     changed_paths = {file.filename for file in comparison.files}
-    filtered_paths = _filter_significant_paths(repo, changed_paths)
+    filtered_paths = _filter_significant_paths(repo, changed_paths, tag_name)
 
     return len(filtered_paths) > 0
 
@@ -2059,11 +2059,28 @@ def _repository_has_significant_changes_since_release(repo: Repository) -> bool:
 _IGNORED_RELEASE_PATH_PREFIXES = (".github/", "test/")
 
 
-def _filter_significant_paths(repo: Repository, paths: set[str]) -> set[str]:
+def _filter_significant_paths(
+    repo: Repository, paths: set[str], base_ref: str
+) -> set[str]:
     ignored_file_paths = set()
 
     if repo.language == "Python":
         ignored_file_paths.add("uv.lock")
+        if not _manifest_changed_outside_dev(
+            _load_pyproject(repo),
+            _load_pyproject_ref(repo, base_ref),
+            "dependency-groups",
+        ):
+            ignored_file_paths.add("pyproject.toml")
+
+    if repo.language in {"JavaScript", "TypeScript"}:
+        ignored_file_paths.add("package-lock.json")
+        if not _manifest_changed_outside_dev(
+            _load_package_json_ref(repo, repo.default_branch),
+            _load_package_json_ref(repo, base_ref),
+            "devDependencies",
+        ):
+            ignored_file_paths.add("package.json")
 
     filtered_paths = set()
 
@@ -2075,6 +2092,54 @@ def _filter_significant_paths(repo: Repository, paths: set[str]) -> set[str]:
         filtered_paths.add(path)
 
     return filtered_paths
+
+
+def _manifest_changed_outside_dev(
+    head: dict[str, Any], base: dict[str, Any], dev_key: str
+) -> bool:
+    """Whether a package manifest changed anywhere but its dev dependencies.
+
+    Dependabot bumping a dev tool rewrites the manifest without changing
+    anything the published package ships, which isn't worth a release.
+    """
+    if not head or not base:
+        return True
+    return _without_key(head, dev_key) != _without_key(base, dev_key)
+
+
+def _without_key(mapping: dict[str, Any], key: str) -> dict[str, Any]:
+    return {k: v for k, v in mapping.items() if k != key}
+
+
+@cache
+def _get_contents_text_ref(repo: Repository, path: str, ref: str) -> str:
+    logger.debug("Loading %s for %s at %s", path, repo.full_name, ref)
+    try:
+        contents = repo.get_contents(path=path, ref=ref)
+    except GithubException:
+        return ""
+    if isinstance(contents, list):
+        return ""
+    return contents.decoded_content.decode("utf-8")
+
+
+@cache
+def _load_pyproject_ref(repo: Repository, ref: str) -> dict[str, Any]:
+    try:
+        return tomllib.loads(_get_contents_text_ref(repo, "pyproject.toml", ref))
+    except tomllib.TOMLDecodeError:
+        return {}
+
+
+@cache
+def _load_package_json_ref(repo: Repository, ref: str) -> dict[str, Any]:
+    try:
+        config = json.loads(_get_contents_text_ref(repo, "package.json", ref))
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(config, dict):
+        return {}
+    return cast(dict[str, Any], config)
 
 
 @cache
