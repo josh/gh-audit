@@ -555,6 +555,41 @@ def _pyproject_requires_python_min_version(
     return max(versions)
 
 
+# First release and end-of-life dates from https://devguide.python.org/versions/
+_PYTHON_VERSIONS: Final[dict[tuple[int, int], tuple[datetime, datetime]]] = {
+    (3, 9): (datetime(2020, 10, 5, tzinfo=UTC), datetime(2025, 10, 31, tzinfo=UTC)),
+    (3, 10): (datetime(2021, 10, 4, tzinfo=UTC), datetime(2026, 10, 31, tzinfo=UTC)),
+    (3, 11): (datetime(2022, 10, 24, tzinfo=UTC), datetime(2027, 10, 31, tzinfo=UTC)),
+    (3, 12): (datetime(2023, 10, 2, tzinfo=UTC), datetime(2028, 10, 31, tzinfo=UTC)),
+    (3, 13): (datetime(2024, 10, 7, tzinfo=UTC), datetime(2029, 10, 31, tzinfo=UTC)),
+    (3, 14): (datetime(2025, 10, 7, tzinfo=UTC), datetime(2030, 10, 31, tzinfo=UTC)),
+    (3, 15): (datetime(2026, 10, 1, tzinfo=UTC), datetime(2031, 10, 31, tzinfo=UTC)),
+    (3, 16): (datetime(2027, 10, 6, tzinfo=UTC), datetime(2032, 10, 31, tzinfo=UTC)),
+}
+
+
+def _python_version_is_eol(version: tuple[int, int]) -> bool:
+    if version < min(_PYTHON_VERSIONS):
+        return True
+    if schedule := _PYTHON_VERSIONS.get(version):
+        return schedule[1] < datetime.now(tz=UTC)
+    return False
+
+
+def _latest_stable_python() -> tuple[int, int]:
+    now = datetime.now(tz=UTC)
+    return max(
+        version for version, (release, _) in _PYTHON_VERSIONS.items() if release < now
+    )
+
+
+def _requires_python_has_upper_bound(requires_python: str) -> bool:
+    for clause in requires_python.split(","):
+        if re.match(r"\s*(<=|<|~=|==)\s*\d", clause):
+            return True
+    return False
+
+
 @define_rule(
     name="missing-pyproject-requires-python",
     log_message="project.requires-python missing in pyproject.toml",
@@ -571,24 +606,88 @@ def _missing_pyproject_requires_python(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="pyproject-requires-python-deprecated",
-    log_message="project.requires-python should target Python 3.10 or newer",
+    name="pyproject-requires-python-eol",
+    log_message="project.requires-python targets an end-of-life Python version",
     level="warning",
 )
-def _pyproject_requires_python_deprecated(repo: Repository) -> RESULT:
-    pyproject = _load_pyproject(repo)
-    if not pyproject:
+def _pyproject_requires_python_eol(repo: Repository) -> RESULT:
+    min_version = _pyproject_requires_python_min_version(
+        _pyproject_requires_python(repo)
+    )
+    if min_version is None:
         return SKIP
 
+    if _python_version_is_eol(min_version):
+        return FAIL
+    return OK
+
+
+@define_rule(
+    name="pyproject-requires-python-unreleased",
+    log_message="project.requires-python targets an unreleased Python version",
+    level="warning",
+)
+def _pyproject_requires_python_unreleased(repo: Repository) -> RESULT:
+    min_version = _pyproject_requires_python_min_version(
+        _pyproject_requires_python(repo)
+    )
+    if min_version is None:
+        return SKIP
+
+    if min_version > _latest_stable_python():
+        return FAIL
+    return OK
+
+
+@define_rule(
+    name="pyproject-requires-python-upper-bound",
+    log_message="project.requires-python should not set an upper bound",
+    level="warning",
+)
+def _pyproject_requires_python_upper_bound(repo: Repository) -> RESULT:
     requires_python = _pyproject_requires_python(repo)
     if not requires_python:
         return SKIP
 
-    min_version = _pyproject_requires_python_min_version(requires_python)
+    if _requires_python_has_upper_bound(requires_python):
+        return FAIL
+    return OK
+
+
+def _pyproject_python_version_classifiers(repo: Repository) -> set[tuple[int, int]]:
+    versions: set[tuple[int, int]] = set()
+    for classifier in _load_pyproject(repo).get("project", {}).get("classifiers", []):
+        if match := re.fullmatch(
+            r"Programming Language :: Python :: (\d+)\.(\d+)", classifier
+        ):
+            versions.add((int(match[1]), int(match[2])))
+    return versions
+
+
+@define_rule(
+    name="pyproject-python-version-classifiers",
+    log_message="Python classifiers don't match project.requires-python",
+    level="warning",
+)
+def _pyproject_python_version_classifiers_match(repo: Repository) -> RESULT:
+    classifier_versions = _pyproject_python_version_classifiers(repo)
+    if not classifier_versions:
+        return SKIP
+
+    min_version = _pyproject_requires_python_min_version(
+        _pyproject_requires_python(repo)
+    )
     if min_version is None:
         return SKIP
 
-    if min_version < (3, 10):
+    latest = _latest_stable_python()
+    if min_version > latest:
+        return SKIP
+
+    expected = {
+        version for version in _PYTHON_VERSIONS if min_version <= version <= latest
+    }
+    if classifier_versions != expected:
         return FAIL
     return OK
 
