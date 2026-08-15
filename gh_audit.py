@@ -1,7 +1,9 @@
+import difflib
 import json
 import logging
 import re
 import subprocess
+import sys
 import tomllib
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
@@ -685,6 +687,57 @@ def _missing_pyproject_fmt_indent(repo: Repository) -> RESULT:
     if _pyproject_fmt_indent(repo) == 4:
         return OK
     return FAIL
+
+
+@cache
+def _pyproject_fmt_diff(repo: Repository) -> str | None:
+    """Diff of pyproject.toml against pyproject-fmt output, or None if it couldn't run."""
+    logger.debug("Running pyproject-fmt for %s", repo.full_name)
+    contents = _get_contents_text(repo, path="pyproject.toml")
+    if not contents:
+        return None
+
+    try:
+        p = subprocess.run(
+            [sys.executable, "-m", "pyproject_fmt", "-"],
+            input=contents,
+            check=False,
+            capture_output=True,
+            encoding="utf-8",
+        )
+    except FileNotFoundError:
+        return None
+
+    if not p.stdout:
+        logger.debug("pyproject-fmt failed for %s: %s", repo.full_name, p.stderr)
+        return None
+
+    return "".join(
+        difflib.unified_diff(
+            contents.splitlines(keepends=True),
+            p.stdout.splitlines(keepends=True),
+            fromfile="pyproject.toml",
+            tofile="pyproject.toml (formatted)",
+        )
+    )
+
+
+@define_rule(
+    name="unformatted-pyproject",
+    log_message="pyproject.toml is not formatted, run pyproject-fmt",
+    level="error",
+)
+def _unformatted_pyproject(repo: Repository) -> RESULT:
+    if not _load_pyproject(repo):
+        return SKIP
+
+    diff = _pyproject_fmt_diff(repo)
+    if diff is None:
+        return SKIP
+    if diff:
+        logger.debug("pyproject-fmt diff for %s:\n%s", repo.full_name, diff)
+        return FAIL
+    return OK
 
 
 @cache
