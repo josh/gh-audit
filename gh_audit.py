@@ -1216,6 +1216,10 @@ def _uv_dependabot_lockfile_only(repo: Repository) -> RESULT:
 def _disable_actions(repo: Repository) -> RESULT:
     if _get_workflow_paths(repo):
         return SKIP
+    # Pages publishes through a generated Actions workflow, even with no
+    # workflow files of our own.
+    if repo.has_pages:
+        return SKIP
     permissions = _get_actions_permissions(repo)
     if permissions["enabled"]:
         return FAIL
