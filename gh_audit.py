@@ -1,4 +1,5 @@
 import difflib
+import io
 import json
 import logging
 import re
@@ -6,6 +7,7 @@ import subprocess
 import sys
 import tomllib
 from collections.abc import Callable, Iterator
+from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import cache
@@ -13,6 +15,7 @@ from pathlib import Path
 from typing import Any, Final, Literal, NotRequired, TypedDict, cast
 
 import click
+import pyproject_fmt
 import yaml
 from github import Auth, Github, GithubException
 from github.ContentFile import ContentFile
@@ -796,25 +799,29 @@ def _pyproject_fmt_diff(repo: Repository) -> str | None:
     if not contents:
         return None
 
+    stdout, stderr = io.StringIO(), io.StringIO()
+    original_stdin = sys.stdin
+    sys.stdin = io.StringIO(contents)
     try:
-        p = subprocess.run(
-            [sys.executable, "-m", "pyproject_fmt", "-"],
-            input=contents,
-            check=False,
-            capture_output=True,
-            encoding="utf-8",
-        )
-    except FileNotFoundError:
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            pyproject_fmt.run(["-"])
+    except Exception:
+        logger.debug("pyproject-fmt crashed for %s", repo.full_name, exc_info=True)
         return None
+    finally:
+        sys.stdin = original_stdin
 
-    if not p.stdout:
-        logger.debug("pyproject-fmt failed for %s: %s", repo.full_name, p.stderr)
+    formatted = stdout.getvalue()
+    if not formatted:
+        logger.debug(
+            "pyproject-fmt failed for %s: %s", repo.full_name, stderr.getvalue()
+        )
         return None
 
     return "".join(
         difflib.unified_diff(
             contents.splitlines(keepends=True),
-            p.stdout.splitlines(keepends=True),
+            formatted.splitlines(keepends=True),
             fromfile="pyproject.toml",
             tofile="pyproject.toml (formatted)",
         )
