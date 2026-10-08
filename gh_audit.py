@@ -299,6 +299,52 @@ def _has_issues(repo: Repository) -> RESULT:
     return FAIL
 
 
+class RepositoryCreationPolicies(TypedDict):
+    issueCreationPolicy: Literal["ALL", "COLLABORATORS_ONLY"]
+    pullRequestCreationPolicy: Literal["ALL", "COLLABORATORS_ONLY"]
+
+
+@cache
+def _get_creation_policies(repo: Repository) -> RepositoryCreationPolicies:
+    _, data = repo._requester.graphql_node(
+        repo.node_id,
+        "issueCreationPolicy pullRequestCreationPolicy",
+        "Repository",
+    )
+    return cast(RepositoryCreationPolicies, data["data"]["node"])
+
+
+# Dependabot, Renovate and other GitHub Apps installed with write access count
+# as collaborators, so bot PRs are unaffected.
+@define_rule(
+    name="issues-collaborators-only",
+    log_message="Restrict issue creation to collaborators only",
+    level="warning",
+)
+def _issues_collaborators_only(repo: Repository) -> RESULT:
+    if repo.private or repo.fork or not repo.has_issues:
+        return SKIP
+    if _get_creation_policies(repo)["issueCreationPolicy"] == "COLLABORATORS_ONLY":
+        return OK
+    return FAIL
+
+
+@define_rule(
+    name="pull-requests-collaborators-only",
+    log_message="Restrict pull request creation to collaborators only",
+    level="warning",
+)
+def _pull_requests_collaborators_only(repo: Repository) -> RESULT:
+    if repo.private or repo.fork:
+        return SKIP
+    if repo.raw_data.get("has_pull_requests") is False:
+        return SKIP
+    policy = _get_creation_policies(repo)["pullRequestCreationPolicy"]
+    if policy == "COLLABORATORS_ONLY":
+        return OK
+    return FAIL
+
+
 @define_rule(
     name="no-projects",
     log_message="Repository has Projects enabled",
