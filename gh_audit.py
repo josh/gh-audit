@@ -317,12 +317,12 @@ def _get_creation_policies(repo: Repository) -> RepositoryCreationPolicies:
 # Dependabot, Renovate and other GitHub Apps installed with write access count
 # as collaborators, so bot PRs are unaffected.
 @define_rule(
-    name="issues-collaborators-only",
+    name="issue-collab-only",
     log_message="Restrict issue creation to collaborators only",
     level="warning",
 )
-def _issues_collaborators_only(repo: Repository) -> RESULT:
-    if repo.private or repo.fork or not repo.has_issues:
+def _issue_collab_only(repo: Repository) -> RESULT:
+    if repo.visibility != "public" or repo.fork or not repo.has_issues:
         return SKIP
     if _get_creation_policies(repo)["issueCreationPolicy"] == "COLLABORATORS_ONLY":
         return OK
@@ -330,12 +330,12 @@ def _issues_collaborators_only(repo: Repository) -> RESULT:
 
 
 @define_rule(
-    name="pull-requests-collaborators-only",
+    name="pr-collab-only",
     log_message="Restrict pull request creation to collaborators only",
     level="warning",
 )
-def _pull_requests_collaborators_only(repo: Repository) -> RESULT:
-    if repo.private or repo.fork:
+def _pr_collab_only(repo: Repository) -> RESULT:
+    if repo.visibility != "public" or repo.fork:
         return SKIP
     if repo.raw_data.get("has_pull_requests") is False:
         return SKIP
