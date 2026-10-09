@@ -1,10 +1,10 @@
 # Agents Guide
 
-This project uses Python 3.11 or newer and manages dependencies with `uv`.
+This project uses Python 3.12 or newer and manages dependencies with `uv`.
 
 ## Setup
 
-Install Python 3.11 or newer and install `uv` with:
+Install Python 3.12 or newer and install `uv` with:
 
 ```sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
