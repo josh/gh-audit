@@ -607,12 +607,12 @@ def _pyproject_requires_python_min_version(
 # First release and end-of-life dates from https://devguide.python.org/versions/
 _PYTHON_VERSIONS: Final[dict[tuple[int, int], tuple[datetime, datetime]]] = {
     (3, 9): (datetime(2020, 10, 5, tzinfo=UTC), datetime(2025, 10, 31, tzinfo=UTC)),
-    (3, 10): (datetime(2021, 10, 4, tzinfo=UTC), datetime(2026, 10, 31, tzinfo=UTC)),
+    (3, 10): (datetime(2021, 10, 4, tzinfo=UTC), datetime(2026, 10, 1, tzinfo=UTC)),
     (3, 11): (datetime(2022, 10, 24, tzinfo=UTC), datetime(2027, 10, 31, tzinfo=UTC)),
     (3, 12): (datetime(2023, 10, 2, tzinfo=UTC), datetime(2028, 10, 31, tzinfo=UTC)),
     (3, 13): (datetime(2024, 10, 7, tzinfo=UTC), datetime(2029, 10, 31, tzinfo=UTC)),
     (3, 14): (datetime(2025, 10, 7, tzinfo=UTC), datetime(2030, 10, 31, tzinfo=UTC)),
-    (3, 15): (datetime(2026, 10, 1, tzinfo=UTC), datetime(2031, 10, 31, tzinfo=UTC)),
+    (3, 15): (datetime(2026, 10, 9, tzinfo=UTC), datetime(2031, 10, 31, tzinfo=UTC)),
     (3, 16): (datetime(2027, 10, 6, tzinfo=UTC), datetime(2032, 10, 31, tzinfo=UTC)),
 }
 
