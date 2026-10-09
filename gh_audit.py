@@ -617,18 +617,20 @@ _PYTHON_VERSIONS: Final[dict[tuple[int, int], tuple[datetime, datetime]]] = {
 }
 
 
-def _python_version_is_eol(version: tuple[int, int]) -> bool:
+def _python_version_is_eol(
+    version: tuple[int, int], *, now: datetime | None = None
+) -> bool:
     if version < min(_PYTHON_VERSIONS):
         return True
     if schedule := _PYTHON_VERSIONS.get(version):
-        return schedule[1] < datetime.now(tz=UTC)
+        return schedule[1] <= (now if now is not None else datetime.now(tz=UTC))
     return False
 
 
-def _latest_stable_python() -> tuple[int, int]:
-    now = datetime.now(tz=UTC)
+def _latest_stable_python(*, now: datetime | None = None) -> tuple[int, int]:
+    now = now if now is not None else datetime.now(tz=UTC)
     return max(
-        version for version, (release, _) in _PYTHON_VERSIONS.items() if release < now
+        version for version, (release, _) in _PYTHON_VERSIONS.items() if release <= now
     )
 
 
