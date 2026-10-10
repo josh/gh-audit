@@ -1294,6 +1294,49 @@ def _disable_automated_security_fixes(repo: Repository) -> RESULT:
     return OK
 
 
+@cache
+def _has_vulnerability_alerts(repo: Repository) -> bool:
+    # 204 when enabled, 404 when disabled.
+    try:
+        repo._requester.requestJsonAndCheck("GET", f"{repo.url}/vulnerability-alerts")
+    except GithubException:
+        return False
+    return True
+
+
+@define_rule(
+    name="disable-vulnerability-alerts",
+    log_message="Repository should disable Dependabot alerts",
+    level="error",
+)
+def _disable_vulnerability_alerts(repo: Repository) -> RESULT:
+    if _has_vulnerability_alerts(repo):
+        return FAIL
+    return OK
+
+
+@cache
+def _has_private_vulnerability_reporting(repo: Repository) -> bool:
+    _, data = repo._requester.requestJsonAndCheck(
+        "GET", f"{repo.url}/private-vulnerability-reporting"
+    )
+    return bool(data["enabled"])
+
+
+@define_rule(
+    name="disable-private-vulnerability-reporting",
+    log_message="Repository should disable private vulnerability reporting",
+    level="error",
+)
+def _disable_private_vulnerability_reporting(repo: Repository) -> RESULT:
+    # Only available on public repositories.
+    if repo.private:
+        return SKIP
+    if _has_private_vulnerability_reporting(repo):
+        return FAIL
+    return OK
+
+
 @define_rule(
     name="disable-actions",
     log_message="Repository without workflows should disable Actions",
