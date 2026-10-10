@@ -1263,6 +1263,37 @@ def _uv_dependabot_lockfile_only(repo: Repository) -> RESULT:
     return OK if found else SKIP
 
 
+class RepositoryAutomatedSecurityFixes(TypedDict):
+    enabled: bool
+    paused: bool
+
+
+@cache
+def _get_automated_security_fixes(
+    repo: Repository,
+) -> RepositoryAutomatedSecurityFixes | None:
+    # 404s when Dependabot alerts are disabled, which also rules out fixes.
+    try:
+        _, data = repo._requester.requestJsonAndCheck(
+            "GET", f"{repo.url}/automated-security-fixes"
+        )
+    except GithubException:
+        return None
+    return cast(RepositoryAutomatedSecurityFixes, data)
+
+
+@define_rule(
+    name="disable-automated-security-fixes",
+    log_message="Repository should disable Dependabot security updates",
+    level="error",
+)
+def _disable_automated_security_fixes(repo: Repository) -> RESULT:
+    fixes = _get_automated_security_fixes(repo)
+    if fixes and fixes["enabled"]:
+        return FAIL
+    return OK
+
+
 @define_rule(
     name="disable-actions",
     log_message="Repository without workflows should disable Actions",
