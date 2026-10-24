@@ -30,10 +30,10 @@ uv run ruff format --diff .
 uv run ruff check .
 ```
 
-Check type correctness with mypy:
+Check type correctness with ty:
 
 ```sh
-uv run mypy .
+uv run ty check
 ```
 
 This repository currently has no automated test suite.
