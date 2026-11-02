@@ -1,13 +1,15 @@
 name: Lint
 
-on: push
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   ruff:
-    runs-on: ubuntu-slim
-
-    env:
-      RUFF_OUTPUT_FORMAT: github
+    runs-on: ubuntu-amd64
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -15,7 +17,7 @@ jobs:
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --locked
 
       - name: Ruff Formatter
         run: uv run ruff format --diff .
@@ -24,7 +26,7 @@ jobs:
         run: uv run ruff check .
 
   ty:
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-amd64
 
     strategy:
       matrix:
@@ -39,7 +41,7 @@ jobs:
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync ${{ matrix.uv_resolution == 'highest' && '--locked' || '' }}
 
       - name: ty
         run: uv run ty check
