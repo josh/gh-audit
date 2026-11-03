@@ -1,6 +1,7 @@
 ---
 name: audit
 description: Run gh-audit over all active repos and triage each finding interactively — mute it, get walked through fixing it, or tune the rule. Use when asked to audit repos, run gh-audit over everything, or triage audit findings.
+compatibility: Run from a gh-audit checkout. Requires uv, an authenticated gh CLI, jj, and network access to GitHub.
 ---
 
 # Interactive repo audit
@@ -8,19 +9,19 @@ description: Run gh-audit over all active repos and triage each finding interact
 Run `gh-audit` in the background and triage every finding with the user, one at a
 time, as the output streams in.
 
-`/audit` audits all active repos. `/audit <repo>` or `/audit --rule <name>` scopes
-it down — pass any arguments straight through to `gh_audit.py`.
+With no arguments, audit all active repos. If the user names a repo or a rule
+(`<repo>`, `--rule <name>`), pass those arguments straight through to `gh_audit.py`.
 
 ## 1. Start the run
 
 Read the mute list first (see **Mute** below) so muted findings never reach a prompt.
 
-Then launch in the background with Bash `run_in_background: true`, writing stdout to
-a file in the session scratchpad and stderr to a separate one. Never write run
-artifacts into the gh-audit checkout.
+Then launch it as a background process, writing stdout to one file and stderr to
+another in a temporary directory outside the checkout (the session scratchpad, if
+your agent has one). Never write run artifacts into the gh-audit checkout.
 
 ```bash
-uv run python -u gh_audit.py --active > <scratchpad>/out 2> <scratchpad>/err
+uv run python -u gh_audit.py --active > "$TMP/out" 2> "$TMP/err"
 ```
 
 Three things that will bite if ignored:
@@ -64,9 +65,9 @@ Before prompting on anything:
   `missing-ruff` each have an error and a warning definition emitting the same
   message. Collapse them into one prompt and mention both levels. Same collision
   means `--rule missing-ruff` runs both definitions.
-- **Note each decision as you make it** in a scratchpad file, so an interrupted loop
-  resumes instead of re-asking. (Resume is within-session only; the scratchpad
-  doesn't outlive the session. Mutes are permanent — they live in memory.)
+- **Note each decision as you make it** in a file next to the run output, so an
+  interrupted loop resumes instead of re-asking. (Resume is within-session only;
+  the temporary directory doesn't outlive the session. Mutes are permanent.)
 
 ## 3. Triage each finding
 
@@ -79,16 +80,18 @@ One prompt per finding, in arrival order. Before asking, actually understand it:
 3. Pull cheap read-only evidence when it sharpens the explanation, e.g.
    `gh repo view josh/<name> --json description,topics`.
 
-Then ask with `AskUserQuestion`. Exactly four options, exactly one suffixed
-`(Recommended)`. Use `Decision` as the `header` (rule names exceed the 12-char
-limit) and put `repo — rule (level)` in the question text.
+Then ask the user to choose. Use your agent's structured multiple-choice question
+tool if it has one; otherwise present a numbered list and wait for a reply. Offer
+exactly four options with exactly one marked `(Recommended)`, and put
+`repo — rule (level)` in the question text. If the tool has a short header or label
+field, use `Decision` — rule names are often too long for it.
 
 | Option     | Meaning                                                                |
 | ---------- | ---------------------------------------------------------------------- |
 | **Mute**   | Not a real problem here. Record it; never prompt for it again.         |
 | **Fix**    | Walk the user through fixing it themselves.                            |
 | **Adjust** | The rule itself is wrong or over-matching; tune `gh_audit.py`.         |
-| **Skip**   | Not now. Nothing is written to memory; it will surface again next run. |
+| **Skip**   | Not now. Nothing is recorded; it will surface again next run.          |
 
 Which one to recommend:
 
@@ -103,13 +106,14 @@ Which one to recommend:
 - Never recommend **Skip**. It's always offered, never suggested — it exists so the
   user can defer without being forced into a permanent decision.
 
-The recommendation is a suggestion. The user picks.
+The recommendation is a suggestion. The user picks. Accept free-text answers too
+(e.g. "mute this everywhere").
 
 ## 4. Mute
 
-Keep all mutes in one memory file,
-`/Users/josh/.claude/projects/-Users-josh-Developer-gh-audit/memory/gh-audit-mutes.md`
-(`type: feedback`). Append a row; never create a memory file per mute.
+Keep all mutes in one file outside the repo so they persist across sessions and
+agents: `${XDG_CONFIG_HOME:-~/.config}/gh-audit/mutes.md`. Create it with this
+table on first use, then append a row per mute.
 
 ```markdown
 | repo                  | rule           | why                            |
@@ -118,12 +122,9 @@ Keep all mutes in one memory file,
 | \*                    | no-discussions | doesn't want discussions, ever |
 ```
 
-`*` in the repo column mutes the rule everywhere. The Mute option is repo-scoped by
-default — the user can ask for rule-wide via the free-text **Other**. Always capture
-a real reason in the `why` column; a mute with no rationale is unreviewable later.
-
-On first creation, add the one-line pointer to `MEMORY.md` and link
-`[[jj-atomic-change-workflow]]` and `[[uv-run-nix-binary-gotcha]]` from the body.
+`*` in the repo column mutes the rule everywhere. Mute is repo-scoped by default —
+the user can ask for rule-wide in a free-text answer. Always capture a real reason
+in the `why` column; a mute with no rationale is unreviewable later.
 
 ## 5. Fix
 
@@ -143,20 +144,21 @@ bookmark and do not push — the user reviews and lands these themselves.
 
 ```bash
 uv run python gh_audit.py --rule <name> --active     # confirm the tuning worked
-uv run ruff format --diff . && uv run ruff check . && uv run mypy .
+uv run ruff format --diff . && uv run ruff check . && uv run ty check
 jj new main@origin -m "<why, one line, under 72 chars>"   # only if @ is already described
 ```
 
 - Keep one described change per adjustment so each stays atomic and independently
   droppable. If `@` is empty and undescribed, just describe it rather than starting
   another change.
-- There is no test suite; ruff and mypy are the full gate.
+- There is no test suite; ruff and ty are the full gate.
 - Then resume triage where it left off.
 
 ## 7. Skip
 
-Note it in the session scratchpad so the loop doesn't re-ask, and move on. Write
-nothing to memory — a skip is not a mute and leaves no trace past this session.
+Note it in the run's decision file so the loop doesn't re-ask, and move on. Write
+nothing to the mute file — a skip is not a mute and leaves no trace past this
+session.
 
 ## 8. Wrap up
 
