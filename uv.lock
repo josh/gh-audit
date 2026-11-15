@@ -307,6 +307,9 @@ dev = [
     { name = "ty" },
     { name = "types-pyyaml" },
 ]
+lint = [
+    { name = "ruff" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -322,6 +325,7 @@ dev = [
     { name = "ty", specifier = ">=0.0.91,<0.1" },
     { name = "types-pyyaml", specifier = ">=6.0.1,<7" },
 ]
+lint = [{ name = "ruff", specifier = ">=0.3,<2" }]
 
 [[package]]
 name = "idna"
