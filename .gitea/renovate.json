@@ -1,7 +1,5 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "schedule": ["* 0-3 * * 1"],
-  "minimumReleaseAge": "14 days",
   "rangeStrategy": "update-lockfile",
   "packageRules": [
     {
